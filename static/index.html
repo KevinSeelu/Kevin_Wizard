@@ -3,630 +3,737 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Kevin the Wizard — Circuit Pipeline</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<title>Kevin the Wizard — PCB Co-Pilot</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cinzel:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <style>
   :root {
-    --bg: #0a0a0a;
-    --panel: #111111;
-    --border: #222222;
-    --accent: #00ff88;
-    --accent2: #ff6b35;
-    --warn: #ffd93d;
-    --text: #e8e8e8;
-    --muted: #555;
-    --fail: #ff4444;
-    --pass: #00ff88;
+    --brass: #c8922a;
+    --brass-light: #e8b84b;
+    --brass-dark: #8b6010;
+    --copper: #b87333;
+    --rust: #8b3a1a;
+    --parchment: #f5e6c8;
+    --parchment-dark: #d4b896;
+    --ink: #1a0f00;
+    --steam: rgba(200,180,140,0.15);
+    --leather: #3d1f00;
+    --iron: #2a2420;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
+    background-color: var(--iron);
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(139,96,16,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(184,115,51,0.1) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8922a' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    font-family: 'Special Elite', cursive;
+    color: var(--parchment);
     min-height: 100vh;
     overflow-x: hidden;
   }
 
-  /* Grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+  /* ── GEAR ANIMATIONS ── */
+  @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes spin-reverse { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+  @keyframes steam-rise {
+    0% { opacity: 0; transform: translateY(0) scaleX(1); }
+    50% { opacity: 0.6; transform: translateY(-30px) scaleX(1.3); }
+    100% { opacity: 0; transform: translateY(-70px) scaleX(0.8); }
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.7; } 95% { opacity: 1; } 97% { opacity: 0.8; }
+  }
+  @keyframes needle-move {
+    0%,100% { transform: rotate(-30deg); }
+    50% { transform: rotate(30deg); }
+  }
+  @keyframes pulse-glow {
+    0%,100% { box-shadow: 0 0 10px var(--brass), 0 0 20px rgba(200,146,42,0.3); }
+    50% { box-shadow: 0 0 20px var(--brass), 0 0 40px rgba(200,146,42,0.5), 0 0 60px rgba(200,146,42,0.2); }
+  }
+  @keyframes log-appear {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
-  .container {
+  /* ── HEADER ── */
+  header {
     position: relative;
-    z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 60px 24px;
-  }
-
-  /* Header */
-  .header {
-    margin-bottom: 56px;
-  }
-
-  .header-tag {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .header-tag::before {
-    content: '';
-    width: 20px;
-    height: 1px;
-    background: var(--accent);
-  }
-
-  h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(52px, 8vw, 88px);
-    line-height: 0.9;
-    letter-spacing: 2px;
-    color: var(--text);
-  }
-
-  h1 span {
-    color: var(--accent);
-    display: block;
-  }
-
-  .subtitle {
-    margin-top: 16px;
-    font-size: 14px;
-    color: var(--muted);
-    font-weight: 300;
-    max-width: 480px;
-    line-height: 1.7;
-  }
-
-  /* Pipeline steps indicator */
-  .pipeline-steps {
-    display: flex;
-    gap: 0;
-    margin-bottom: 40px;
-    border: 1px solid var(--border);
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    border-bottom: 3px solid var(--brass-dark);
     overflow: hidden;
   }
 
-  .step {
-    flex: 1;
-    padding: 12px 8px;
-    text-align: center;
-    font-family: 'Share Tech Mono', monospace;
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(139,96,16,0.2) 0%, transparent 100%);
+  }
+
+  .gear-bg {
+    position: absolute;
+    opacity: 0.06;
+    font-size: 200px;
+    line-height: 1;
+    top: -40px; left: -40px;
+    animation: spin-slow 30s linear infinite;
+    user-select: none;
+  }
+  .gear-bg-2 {
+    position: absolute;
+    opacity: 0.04;
+    font-size: 150px;
+    line-height: 1;
+    top: 20px; right: -20px;
+    animation: spin-reverse 20s linear infinite;
+    user-select: none;
+  }
+
+  .steam-puff {
+    position: absolute;
+    bottom: 10px;
+    width: 30px; height: 40px;
+    background: radial-gradient(ellipse, rgba(220,200,160,0.4), transparent);
+    border-radius: 50%;
+    animation: steam-rise 3s ease-out infinite;
+  }
+  .steam-puff:nth-child(2) { left: 15%; animation-delay: 0.8s; }
+  .steam-puff:nth-child(3) { left: 85%; animation-delay: 1.6s; }
+  .steam-puff:nth-child(4) { left: 50%; animation-delay: 2.4s; }
+
+  .title-emblem {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 700;
+    color: var(--brass-light);
+    text-shadow: 0 0 30px rgba(200,146,42,0.5), 2px 2px 0 var(--brass-dark);
+    letter-spacing: 0.1em;
+    animation: flicker 8s infinite;
+  }
+
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-dark);
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    margin-top: 0.3rem;
+  }
+
+  .rivet-row {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.2rem;
+  }
+  .rivet {
+    width: 12px; height: 12px;
+    background: radial-gradient(circle at 35% 35%, var(--brass-light), var(--brass-dark));
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(200,146,42,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── BRASS PANEL ── */
+  .brass-panel {
+    background: linear-gradient(145deg, #1e1510, #2a1f10, #1a1008);
+    border: 2px solid var(--brass-dark);
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(200,146,42,0.2), inset 0 0 30px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  .brass-panel::before, .brass-panel::after {
+    content: '✦';
+    position: absolute;
+    color: var(--brass);
     font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1px;
+    opacity: 0.6;
+  }
+  .brass-panel::before { top: 6px; left: 10px; }
+  .brass-panel::after { bottom: 6px; right: 10px; }
+
+  .panel-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--brass);
     text-transform: uppercase;
-    border-right: 1px solid var(--border);
-    transition: all 0.3s;
-    position: relative;
+    padding: 0.6rem 1rem 0;
+    opacity: 0.8;
   }
 
-  .step:last-child { border-right: none; }
-
-  .step.active {
-    color: var(--accent);
-    background: rgba(0,255,136,0.05);
-  }
-
-  .step.done {
-    color: var(--accent);
-    background: rgba(0,255,136,0.08);
-  }
-
-  .step.done::after {
-    content: ' OK';
-    color: var(--accent);
-  }
-
-  .step-num {
-    display: block;
-    font-size: 18px;
-    font-family: 'Bebas Neue', sans-serif;
-    margin-bottom: 2px;
-    letter-spacing: 1px;
-  }
-
-  /* Input area */
+  /* ── INPUT SECTION ── */
   .input-section {
-    margin-bottom: 32px;
+    margin-bottom: 1.5rem;
   }
 
-  .input-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 2px;
+  .input-section .brass-panel {
+    padding: 1.5rem;
+  }
+
+  .field-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: var(--brass);
     text-transform: uppercase;
-    margin-bottom: 10px;
-    display: block;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
-
-  .input-wrap {
-    position: relative;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    transition: border-color 0.3s;
-  }
-
-  .input-wrap:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px rgba(0,255,136,0.15), 0 0 20px rgba(0,255,136,0.05);
+  .field-label::before {
+    content: '';
+    display: inline-block;
+    width: 20px; height: 1px;
+    background: var(--brass-dark);
   }
 
   textarea {
     width: 100%;
-    background: transparent;
-    border: none;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--brass-dark);
+    border-radius: 2px;
+    color: var(--parchment);
+    font-family: 'Special Elite', cursive;
+    font-size: 1rem;
+    padding: 1rem;
+    resize: vertical;
+    min-height: 100px;
     outline: none;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 300;
-    padding: 20px;
-    resize: none;
-    height: 110px;
+    transition: border-color 0.3s, box-shadow 0.3s;
     line-height: 1.6;
   }
-
-  textarea::placeholder { color: var(--muted); }
-
-  .input-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 20px 12px;
-    border-top: 1px solid var(--border);
+  textarea::placeholder { color: rgba(212,184,150,0.35); font-style: italic; }
+  textarea:focus {
+    border-color: var(--brass);
+    box-shadow: 0 0 15px rgba(200,146,42,0.2), inset 0 0 10px rgba(0,0,0,0.3);
   }
 
-  .char-count {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
-
-  /* Example chips */
+  /* ── EXAMPLE PROMPTS ── */
   .examples {
     display: flex;
-    gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 28px;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
   }
-
   .example-chip {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    padding: 6px 12px;
-    border: 1px solid var(--border);
-    color: var(--muted);
+    background: rgba(139,96,16,0.2);
+    border: 1px solid rgba(200,146,42,0.3);
+    border-radius: 2px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    color: var(--parchment-dark);
     cursor: pointer;
-    letter-spacing: 0.5px;
     transition: all 0.2s;
-    background: transparent;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
   }
-
   .example-chip:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0,255,136,0.05);
+    background: rgba(200,146,42,0.25);
+    border-color: var(--brass);
+    color: var(--parchment);
   }
 
-  /* Submit button */
-  .btn-run {
+  /* ── ENGAGE BUTTON ── */
+  .btn-engage {
     width: 100%;
-    padding: 18px;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 3px;
+    margin-top: 1rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #8b6010, #c8922a, #8b6010);
+    background-size: 200% 100%;
+    border: 2px solid var(--brass-light);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.2s;
     position: relative;
     overflow: hidden;
+    transition: all 0.3s;
+    animation: pulse-glow 3s ease-in-out infinite;
   }
-
-  .btn-run:hover:not(:disabled) {
-    background: #00ffaa;
+  .btn-engage:hover {
+    background-position: right center;
     transform: translateY(-1px);
-    box-shadow: 0 8px 30px rgba(0,255,136,0.3);
+    box-shadow: 0 0 30px rgba(200,146,42,0.5);
   }
-
-  .btn-run:disabled {
-    background: var(--border);
-    color: var(--muted);
+  .btn-engage:active { transform: translateY(1px); }
+  .btn-engage:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
+    animation: none;
     transform: none;
-    box-shadow: none;
   }
+  .btn-engage .btn-icon { margin-right: 0.5rem; }
 
-  /* Terminal log */
-  .log-section {
-    margin-top: 32px;
-    display: none;
+  /* ── TWO COLUMN ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
   }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
 
-  .log-section.visible { display: block; }
-
-  .log-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
+  /* ── GAUGE / METER ── */
+  .gauge-panel {
+    padding: 1.2rem;
+    text-align: center;
   }
-
-  .log-title {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 2px;
-    text-transform: uppercase;
+  .gauge-wrap {
+    position: relative;
+    width: 120px; height: 70px;
+    margin: 0.5rem auto;
+    overflow: hidden;
   }
-
-  .log-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
+  .gauge-arc {
+    width: 120px; height: 120px;
     border-radius: 50%;
-    animation: pulse 1s infinite;
+    border: 8px solid transparent;
+    border-top-color: var(--brass-dark);
+    border-left-color: var(--brass-dark);
+    border-right-color: var(--brass-dark);
+    position: absolute;
+    top: 0; left: 0;
+    box-sizing: border-box;
+  }
+  .gauge-needle {
+    position: absolute;
+    bottom: 0; left: 50%;
+    width: 2px; height: 55px;
+    background: linear-gradient(var(--rust), var(--brass-light));
+    transform-origin: bottom center;
+    transform: rotate(-30deg);
+    transition: transform 1s ease;
+    margin-left: -1px;
+  }
+  .gauge-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--brass);
+    margin-top: 0.3rem;
+  }
+  .gauge-value {
+    font-family: 'Special Elite', cursive;
+    font-size: 1.4rem;
+    color: var(--brass-light);
+    text-shadow: 0 0 10px rgba(200,146,42,0.5);
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
-  }
-
-  .terminal {
-    background: #050505;
-    border: 1px solid var(--border);
-    padding: 20px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    line-height: 1.9;
-    min-height: 120px;
-    max-height: 280px;
+  /* ── PIPELINE LOG ── */
+  .log-panel { padding: 1.2rem; min-height: 180px; }
+  .log-inner {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(200,146,42,0.2);
+    border-radius: 2px;
+    padding: 0.8rem;
+    height: 200px;
     overflow-y: auto;
-    color: #888;
+    font-family: 'Special Elite', cursive;
+    font-size: 0.82rem;
+    line-height: 1.7;
   }
+  .log-inner::-webkit-scrollbar { width: 6px; }
+  .log-inner::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+  .log-inner::-webkit-scrollbar-thumb { background: var(--brass-dark); border-radius: 3px; }
 
-  .terminal .line { display: block; }
-  .terminal .line.info { color: #888; }
-  .terminal .line.success { color: var(--pass); }
-  .terminal .line.warn { color: var(--warn); }
-  .terminal .line.error { color: var(--fail); }
-  .terminal .line.accent { color: var(--accent); }
-  .terminal .line.fix { color: var(--accent2); }
+  .log-entry {
+    animation: log-appear 0.3s ease;
+    padding: 0.1rem 0;
+  }
+  .log-pass { color: #7ec87e; }
+  .log-fail { color: #e07070; }
+  .log-warn { color: #e0c070; }
+  .log-info { color: var(--parchment-dark); }
+  .log-step { color: var(--brass-light); font-style: italic; }
+  .log-fix  { color: #70b8e0; }
 
-  .cursor {
+  /* ── SAFETY RESULTS ── */
+  .safety-panel { padding: 1.5rem; margin-bottom: 1.5rem; }
+  .safety-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+  }
+  .safety-item {
+    background: rgba(0,0,0,0.3);
+    border-left: 3px solid var(--brass-dark);
+    padding: 0.7rem 0.9rem;
+    border-radius: 0 2px 2px 0;
+    transition: border-color 0.3s;
+  }
+  .safety-item.pass { border-left-color: #4a9e4a; }
+  .safety-item.fail { border-left-color: #9e3a3a; }
+  .safety-item.warn { border-left-color: #9e8a2a; }
+  .safety-item.skip { border-left-color: #5a5a5a; }
+
+  .safety-badge {
     display: inline-block;
-    width: 8px;
-    height: 12px;
-    background: var(--accent);
-    animation: blink 0.8s infinite;
-    vertical-align: middle;
-    margin-left: 2px;
+    font-size: 0.6rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.15em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+    margin-bottom: 0.3rem;
+  }
+  .pass .safety-badge { background: rgba(74,158,74,0.25); color: #7ec87e; border: 1px solid #4a9e4a; }
+  .fail .safety-badge { background: rgba(158,58,58,0.25); color: #e07070; border: 1px solid #9e3a3a; }
+  .warn .safety-badge { background: rgba(158,138,42,0.25); color: #e0c070; border: 1px solid #9e8a2a; }
+  .skip .safety-badge { background: rgba(90,90,90,0.25); color: #aaa; border: 1px solid #5a5a5a; }
+
+  .safety-name {
+    font-size: 0.85rem;
+    color: var(--parchment);
+    margin-bottom: 0.2rem;
+  }
+  .safety-detail {
+    font-size: 0.75rem;
+    color: var(--parchment-dark);
+    opacity: 0.8;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    line-height: 1.4;
   }
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+  /* ── DIAGRAM PANEL ── */
+  .diagram-panel { padding: 1.5rem; margin-bottom: 1.5rem; }
+  .diagram-inner {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(200,146,42,0.2);
+    border-radius: 2px;
+    padding: 1.5rem;
+    min-height: 200px;
+    overflow-x: auto;
+    margin-top: 0.8rem;
+  }
+  .diagram-inner .mermaid {
+    filter: sepia(0.4) hue-rotate(15deg) brightness(1.1);
+  }
+  .diagram-placeholder {
+    text-align: center;
+    color: rgba(212,184,150,0.3);
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 1rem;
+    padding: 3rem 1rem;
   }
 
-  /* Download section */
-  .download-section {
-    margin-top: 32px;
+  /* ── DOWNLOAD ── */
+  .download-panel {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
     display: none;
   }
+  .download-panel.visible { display: block; }
 
-  .download-section.visible { display: block; }
-
-  .download-box {
-    border: 1px solid var(--accent);
-    background: rgba(0,255,136,0.03);
-    padding: 28px;
+  .download-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
-  }
-
-  .download-info .label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--accent);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .download-info .filename {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 1px;
-    color: var(--text);
-  }
-
-  .download-info .file-list {
-    margin-top: 8px;
-    display: flex;
-    gap: 12px;
     flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.8rem;
   }
-
-  .file-badge {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    padding: 3px 8px;
-    border: 1px solid var(--border);
-    color: var(--muted);
+  .file-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .file-tag {
+    background: rgba(139,96,16,0.2);
+    border: 1px solid rgba(200,146,42,0.4);
+    border-radius: 2px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.75rem;
+    color: var(--parchment-dark);
+    font-family: 'Special Elite', cursive;
   }
 
   .btn-download {
-    padding: 14px 32px;
-    background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 16px;
-    letter-spacing: 2px;
+    padding: 0.8rem 2rem;
+    background: linear-gradient(135deg, var(--rust), #c8401a, var(--rust));
+    background-size: 200%;
+    border: 2px solid #e06030;
+    border-radius: 3px;
+    color: var(--parchment);
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
     text-decoration: none;
     display: inline-block;
+    transition: all 0.3s;
   }
-
   .btn-download:hover {
-    background: var(--accent);
-    color: #000;
+    background-position: right;
+    box-shadow: 0 0 20px rgba(200,80,30,0.4);
+    transform: translateY(-1px);
   }
 
-  /* Error box */
-  .error-box {
-    margin-top: 24px;
-    border: 1px solid var(--fail);
-    background: rgba(255,68,68,0.05);
-    padding: 16px 20px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    color: var(--fail);
-    display: none;
+  /* ── DIVIDER ── */
+  .ornate-divider {
+    text-align: center;
+    margin: 1.5rem 0;
+    color: var(--brass-dark);
+    font-size: 1.2rem;
+    letter-spacing: 0.5rem;
+    opacity: 0.6;
   }
 
-  .error-box.visible { display: block; }
-
-  /* Footer */
-  .footer {
-    margin-top: 64px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(200,146,42,0.2);
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 0.8rem;
+    color: rgba(212,184,150,0.4);
   }
 
-  .footer-left {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1px;
-  }
-
-  .status-dot {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
-
-  .status-dot::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
+  /* ── SPINNER ── */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(26,15,0,0.3);
+    border-top-color: var(--ink);
     border-radius: 50%;
+    animation: spin-slow 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.4rem;
   }
 
-  @media (max-width: 600px) {
-    .pipeline-steps { display: none; }
-    .download-box { flex-direction: column; align-items: flex-start; }
-  }
+  /* ── HIDDEN ── */
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
-<div class="container">
 
-  <!-- Header -->
-  <header class="header">
-    <div class="header-tag">AI-Powered Electronics Pipeline</div>
-    <h1>Kevin<span>the Wizard</span></h1>
-    <p class="subtitle">Describe your circuit in plain English. The pipeline generates a JSON netlist, runs AI-powered safety checks, auto-fixes issues, and outputs a complete design package.</p>
-  </header>
+<header>
+  <div class="gear-bg">⚙</div>
+  <div class="gear-bg-2">⚙</div>
+  <div class="steam-puff"></div>
+  <div class="steam-puff"></div>
+  <div class="steam-puff"></div>
 
-  <!-- Pipeline steps -->
-  <div class="pipeline-steps">
-    <div class="step" id="step1"><span class="step-num">01</span>Generate</div>
-    <div class="step" id="step2"><span class="step-num">02</span>Check</div>
-    <div class="step" id="step3"><span class="step-num">03</span>Auto-Fix</div>
-    <div class="step" id="step4"><span class="step-num">04</span>BOM</div>
-    <div class="step" id="step5"><span class="step-num">05</span>Package</div>
+  <div class="title-emblem">
+    <h1>⚙ KEVIN THE WIZARD ⚙</h1>
+    <p class="subtitle">Autonomous PCB Co-Pilot &mdash; Aetheric Circuit Forge</p>
   </div>
+  <div class="rivet-row">
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+    <div class="rivet"></div>
+  </div>
+</header>
 
-  <!-- Input -->
+<main>
+
+  <!-- INPUT -->
   <div class="input-section">
-    <label class="input-label" for="circuit-input">Circuit Description</label>
-    <div class="input-wrap">
-      <textarea
-        id="circuit-input"
-        placeholder="e.g. ESP32 with stepper motor driver on 3S LiPo battery with status LED..."
-        maxlength="500"
-        oninput="updateCount()"
-      ></textarea>
-      <div class="input-footer">
-        <span class="char-count" id="char-count">0 / 500</span>
+    <div class="brass-panel">
+      <div class="panel-label">✦ Transmission Chamber</div>
+      <div style="padding:1rem 1rem 0">
+        <div class="field-label">Describe your circuit apparatus</div>
+        <textarea id="circuitInput" rows="3"
+          placeholder="e.g. ESP32 robot with LiPo battery and two motor drivers..."></textarea>
+        <div class="examples">
+          <span class="example-chip" onclick="setPrompt(this)">Traffic light with Arduino Uno</span>
+          <span class="example-chip" onclick="setPrompt(this)">LiPo-powered ESP32 with dual motor drivers</span>
+          <span class="example-chip" onclick="setPrompt(this)">USB-C charging circuit with TP4056</span>
+          <span class="example-chip" onclick="setPrompt(this)">Raspberry Pi sensor node with I2C display</span>
+        </div>
+        <button class="btn-engage" id="runBtn" onclick="runPipeline()">
+          <span class="btn-icon">⚙</span> ENGAGE THE MECHANISMS
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Example chips -->
-  <div class="examples">
-    <button class="example-chip" onclick="setExample('Traffic signal circuit using Arduino Uno R3')">Traffic Light / Arduino</button>
-    <button class="example-chip" onclick="setExample('ESP32 with stepper motor driver on 3S LiPo battery')">ESP32 Stepper Motor</button>
-    <button class="example-chip" onclick="setExample('Raspberry Pi IoT sensor node with temperature and humidity sensor on USB power')">IoT Sensor Node</button>
-    <button class="example-chip" onclick="setExample('Arduino robot car with dual DC motors and ultrasonic distance sensor')">Robot Car</button>
-  </div>
+  <!-- GAUGES + LOG -->
+  <div class="two-col">
+    <div class="brass-panel gauge-panel">
+      <div class="panel-label">✦ Pressure Gauges</div>
+      <div style="display:flex;justify-content:space-around;margin-top:0.8rem;flex-wrap:wrap;gap:1rem;">
 
-  <!-- Run button -->
-  <button class="btn-run" id="run-btn" onclick="runPipeline()">
-    RUN PIPELINE
-  </button>
+        <div style="text-align:center">
+          <div class="gauge-wrap">
+            <div class="gauge-arc"></div>
+            <div class="gauge-needle" id="needle1"></div>
+          </div>
+          <div class="gauge-value" id="passCount">—</div>
+          <div class="gauge-label">Checks Passed</div>
+        </div>
 
-  <!-- Terminal log -->
-  <div class="log-section" id="log-section">
-    <div class="log-header">
-      <div class="log-dot" id="log-dot"></div>
-      <span class="log-title">Pipeline Output</span>
+        <div style="text-align:center">
+          <div class="gauge-wrap">
+            <div class="gauge-arc" style="border-top-color:var(--rust);border-left-color:var(--rust);border-right-color:var(--rust)"></div>
+            <div class="gauge-needle" id="needle2" style="background:linear-gradient(var(--rust),#e07070)"></div>
+          </div>
+          <div class="gauge-value" id="failCount" style="color:#e07070">—</div>
+          <div class="gauge-label">Issues Found</div>
+        </div>
+
+        <div style="text-align:center">
+          <div class="gauge-wrap">
+            <div class="gauge-arc" style="border-top-color:#7070a0;border-left-color:#7070a0;border-right-color:#7070a0"></div>
+            <div class="gauge-needle" id="needle3" style="background:linear-gradient(#5a5a8a,#a0a0e0)"></div>
+          </div>
+          <div class="gauge-value" id="compCount" style="color:#a0a0e0">—</div>
+          <div class="gauge-label">Components</div>
+        </div>
+
+      </div>
     </div>
-    <div class="terminal" id="terminal"></div>
-  </div>
 
-  <!-- Error -->
-  <div class="error-box" id="error-box"></div>
-
-  <!-- Download -->
-  <div class="download-section" id="download-section">
-    <div class="download-box">
-      <div class="download-info">
-        <div class="label">Output Ready</div>
-        <div class="filename">kevin_wizard_output.zip</div>
-        <div class="file-list">
-          <span class="file-badge">output.json</span>
-          <span class="file-badge">safety_report.txt</span>
-          <span class="file-badge">diagram.md</span>
-          <span class="file-badge">BOM.csv</span>
+    <div class="brass-panel log-panel">
+      <div class="panel-label">✦ Aetheric Transmission Log</div>
+      <div class="log-inner" id="logOutput">
+        <div class="log-entry log-info" style="opacity:0.4;font-style:italic">
+          Awaiting your circuit description, traveller...
         </div>
       </div>
-      <a class="btn-download" id="download-btn" href="#">DOWNLOAD ZIP</a>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <span class="footer-left">Kevin the Wizard v1.0 &mdash; AI Circuit Pipeline</span>
-    <span class="status-dot">Gemini 3.1 Flash-Lite</span>
-  </footer>
+  <!-- SAFETY RESULTS -->
+  <div class="brass-panel safety-panel" id="safetySection" style="display:none">
+    <div class="panel-label">✦ Safety Audit Manifest</div>
+    <div class="safety-grid" id="safetyGrid"></div>
+  </div>
 
-</div>
+  <!-- DIAGRAM -->
+  <div class="brass-panel diagram-panel">
+    <div class="panel-label">✦ Schematic Cartography</div>
+    <div class="diagram-inner" id="diagramOutput">
+      <div class="diagram-placeholder">⚙ &nbsp; Circuit diagram shall appear here upon activation &nbsp; ⚙</div>
+    </div>
+  </div>
+
+  <!-- DOWNLOAD -->
+  <div class="brass-panel download-panel" id="downloadPanel">
+    <div class="panel-label">✦ Design Package Ready</div>
+    <div class="download-inner">
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:1rem;color:var(--brass-light);margin-bottom:0.5rem">
+          KEVIN_WIZARD_OUTPUT.ZIP
+        </div>
+        <div class="file-tags">
+          <span class="file-tag">output.json</span>
+          <span class="file-tag">safety_report.txt</span>
+          <span class="file-tag">diagram.md</span>
+          <span class="file-tag">BOM.csv</span>
+        </div>
+      </div>
+      <a class="btn-download" id="downloadBtn" href="#">⬇ RETRIEVE PACKAGE</a>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Forged in brass & aether &mdash; Kevin the Wizard's Autonomous PCB Co-Pilot &mdash; Hackathon 2026
+</footer>
 
 <script>
-  let zipBlob = null;
+  mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: {
+    primaryColor: '#3d2a0a', primaryTextColor: '#e8b84b',
+    primaryBorderColor: '#c8922a', lineColor: '#c8922a',
+    secondaryColor: '#2a1f10', background: '#1a1008',
+    mainBkg: '#2a1f10', nodeBorder: '#c8922a',
+    clusterBkg: '#1a1008', titleColor: '#e8b84b',
+    edgeLabelBackground: '#1a1008', fontSize: '14px'
+  }});
 
-  function updateCount() {
-    const val = document.getElementById('circuit-input').value.length;
-    document.getElementById('char-count').textContent = `${val} / 500`;
+  function setPrompt(el) {
+    document.getElementById('circuitInput').value = el.textContent;
   }
 
-  function setExample(text) {
-    document.getElementById('circuit-input').value = text;
-    updateCount();
+  function log(msg, type='info') {
+    const box = document.getElementById('logOutput');
+    const entry = document.createElement('div');
+    entry.className = `log-entry log-${type}`;
+    const time = new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    entry.textContent = `[${time}] ${msg}`;
+    box.appendChild(entry);
+    box.scrollTop = box.scrollHeight;
   }
 
-  function log(msg, type = 'info') {
-    const terminal = document.getElementById('terminal');
-    // Remove cursor if present
-    const existing = terminal.querySelector('.cursor-line');
-    if (existing) existing.remove();
-
-    const line = document.createElement('span');
-    line.className = `line ${type}`;
-    line.textContent = `> ${msg}`;
-    terminal.appendChild(line);
-    terminal.appendChild(document.createElement('br'));
-
-    // Add blinking cursor
-    const cursorLine = document.createElement('span');
-    cursorLine.className = 'cursor-line';
-    cursorLine.innerHTML = '<span class="cursor"></span>';
-    terminal.appendChild(cursorLine);
-
-    terminal.scrollTop = terminal.scrollHeight;
+  function clearLog() {
+    document.getElementById('logOutput').innerHTML = '';
   }
 
-  function removeCursor() {
-    const terminal = document.getElementById('terminal');
-    const existing = terminal.querySelector('.cursor-line');
-    if (existing) existing.remove();
+  function setNeedle(id, value, max) {
+    const pct = Math.min(value / max, 1);
+    const deg = -60 + pct * 120;
+    document.getElementById(id).style.transform = `rotate(${deg}deg)`;
   }
 
-  function setStep(n, done = false) {
-    for (let i = 1; i <= 5; i++) {
-      const el = document.getElementById(`step${i}`);
-      el.classList.remove('active', 'done');
-      if (i < n) el.classList.add('done');
-      if (i === n) el.classList.add('active');
+  async function renderDiagram(mermaidText) {
+    const el = document.getElementById('diagramOutput');
+    el.innerHTML = `<div class="mermaid">${mermaidText}</div>`;
+    try {
+      await mermaid.run({ nodes: el.querySelectorAll('.mermaid') });
+    } catch(e) {
+      el.innerHTML = `<pre style="color:var(--parchment-dark);font-size:0.8rem;white-space:pre-wrap">${mermaidText}</pre>`;
     }
+  }
+
+  function buildMermaid(data) {
+    let lines = ['graph TD'];
+    const conns = data.connections || [];
+    conns.forEach(c => {
+      const f = c.from.replace(/[\s\-]/g,'_');
+      const t = c.to.replace(/[\s\-]/g,'_');
+      lines.push(`    ${f} --> ${t}`);
+    });
+    return lines.join('\n');
   }
 
   async function runPipeline() {
-    const input = document.getElementById('circuit-input').value.trim();
-    if (!input) {
-      document.getElementById('circuit-input').focus();
-      return;
-    }
+    const input = document.getElementById('circuitInput').value.trim();
+    if (!input) { alert('Please describe your circuit first.'); return; }
 
-    // Reset UI
-    document.getElementById('run-btn').disabled = true;
-    document.getElementById('run-btn').textContent = 'RUNNING...';
-    document.getElementById('terminal').innerHTML = '';
-    document.getElementById('log-section').classList.add('visible');
-    document.getElementById('download-section').classList.remove('visible');
-    document.getElementById('error-box').classList.remove('visible');
-    document.getElementById('log-dot').style.animationPlayState = 'running';
-    zipBlob = null;
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> MECHANISMS ENGAGED...';
 
-    setStep(1);
-    log('Pipeline started...', 'accent');
-    log(`Request: "${input}"`, 'info');
+    clearLog();
+    document.getElementById('safetySection').style.display = 'none';
+    document.getElementById('downloadPanel').classList.remove('visible');
+    document.getElementById('diagramOutput').innerHTML = '<div class="diagram-placeholder">⚙ &nbsp; Generating schematic... &nbsp; ⚙</div>';
+    document.getElementById('passCount').textContent = '—';
+    document.getElementById('failCount').textContent = '—';
+    document.getElementById('compCount').textContent = '—';
 
-    await sleep(400);
-    setStep(1);
-    log('Sending to Gemini — generating circuit netlist...', 'info');
-
-    await sleep(600);
-    setStep(2);
-    log('Running AI-powered safety checks...', 'info');
-
-    await sleep(400);
-    setStep(3);
-    log('Auto-fix loop initialised...', 'info');
-
-    await sleep(300);
-    setStep(4);
-    log('Preparing BOM — fetching component data...', 'info');
-
-    await sleep(300);
-    setStep(5);
-    log('Packaging output files into ZIP...', 'info');
+    log('Igniting the aetheric boiler...', 'step');
+    log(`Circuit description received: "${input.substring(0,60)}${input.length>60?'...':''}"`, 'info');
+    log('Transmitting to Gemini neural engine...', 'step');
 
     try {
       const response = await fetch('/generate', {
@@ -637,50 +744,125 @@
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Server error');
+        throw new Error(err.error || 'Pipeline failed');
       }
+
+      log('Netlist generated successfully.', 'pass');
+      log('Running electrical safety audit...', 'step');
+      log('Auto-fix loop engaged for any failures...', 'fix');
+      log('Preparing BOM — fetching component data...', 'info');
+      log('Packaging output files into ZIP...', 'step');
 
       const blob = await response.blob();
-      zipBlob = blob;
-
-      removeCursor();
-      log('output.json generated successfully.', 'success');
-      log('Safety checks complete.', 'success');
-      log('Auto-fix loop finished.', 'success');
-      log('BOM.csv written.', 'success');
-      log('diagram.md generated.', 'success');
-      log('ZIP package ready for download.', 'accent');
-
-      // Set download link
       const url = URL.createObjectURL(blob);
-      document.getElementById('download-btn').href = url;
-      document.getElementById('download-btn').download = 'kevin_wizard_output.zip';
 
-      // Show download section
-      document.getElementById('download-section').classList.add('visible');
-      setStep(6); // all done
+      // Parse ZIP for display
+      log('Extracting design data for display...', 'step');
+      try {
+        const { BlobReader, ZipReader, TextWriter } = await import('https://deno.land/x/zipjs/index.js').catch(() => null);
+        // If import fails, just show generic success
+      } catch(e) {}
 
-      // Mark all steps done
-      for (let i = 1; i <= 5; i++) {
-        const el = document.getElementById(`step${i}`);
-        el.classList.remove('active');
-        el.classList.add('done');
-      }
+      // Try to read ZIP contents using JSZip from CDN
+      await displayFromZip(blob, url);
 
-    } catch (err) {
-      removeCursor();
-      log(`ERROR: ${err.message}`, 'error');
-      document.getElementById('error-box').textContent = `Error: ${err.message}`;
-      document.getElementById('error-box').classList.add('visible');
+      log('output.json generated successfully.', 'pass');
+      log('Safety checks complete.', 'pass');
+      log('BOM.csv written.', 'pass');
+      log('diagram.md generated.', 'pass');
+      log('⚙ ALL MECHANISMS NOMINAL — Design package ready!', 'pass');
+
+      document.getElementById('downloadBtn').href = url;
+      document.getElementById('downloadBtn').download = 'kevin_wizard_output.zip';
+      document.getElementById('downloadPanel').classList.add('visible');
+
+    } catch(err) {
+      log(`ERROR: ${err.message}`, 'fail');
+      log('Check your API key and try again.', 'warn');
     } finally {
-      document.getElementById('run-btn').disabled = false;
-      document.getElementById('run-btn').textContent = 'RUN PIPELINE';
-      document.getElementById('log-dot').style.animationPlayState = 'paused';
+      btn.disabled = false;
+      btn.innerHTML = '<span class="btn-icon">⚙</span> ENGAGE THE MECHANISMS';
     }
   }
 
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  async function displayFromZip(blob, url) {
+    // Load JSZip dynamically
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    const zip = await JSZip.loadAsync(blob);
+
+    // Read output.json
+    const jsonFile = zip.file('output.json');
+    if (jsonFile) {
+      const jsonText = await jsonFile.async('text');
+      const data = JSON.parse(jsonText);
+      const compCount = (data.components || []).length;
+      document.getElementById('compCount').textContent = compCount;
+      setNeedle('needle3', compCount, 20);
+
+      // Build and render diagram
+      const mermaidCode = buildMermaid(data);
+      await renderDiagram(mermaidCode);
+      log(`Circuit has ${compCount} components.`, 'info');
+    }
+
+    // Read safety report
+    const reportFile = zip.file('safety_report.txt');
+    if (reportFile) {
+      const reportText = await reportFile.async('text');
+      parseSafetyReport(reportText);
+    }
+  }
+
+  function parseSafetyReport(text) {
+    const lines = text.split('\n');
+    const checks = [];
+    let current = null;
+
+    for (const line of lines) {
+      const statusMatch = line.match(/^\[(PASS|FAIL|WARN|SKIP)\]\s+(.+)/);
+      if (statusMatch) {
+        if (current) checks.push(current);
+        current = { status: statusMatch[1], name: statusMatch[2].trim(), detail: '' };
+      } else if (current && line.trim().startsWith('->')) {
+        current.detail = line.replace('->', '').trim();
+      }
+    }
+    if (current) checks.push(current);
+
+    const passCount = checks.filter(c => c.status === 'PASS').length;
+    const failCount = checks.filter(c => c.status === 'FAIL').length;
+
+    document.getElementById('passCount').textContent = passCount;
+    document.getElementById('failCount').textContent = failCount;
+    setNeedle('needle1', passCount, Math.max(checks.length, 1));
+    setNeedle('needle2', failCount, Math.max(checks.length, 1));
+
+    checks.forEach(c => log(`[${c.status}] ${c.name}`, c.status.toLowerCase()));
+
+    // Render safety grid
+    const grid = document.getElementById('safetyGrid');
+    grid.innerHTML = '';
+    checks.forEach(c => {
+      const div = document.createElement('div');
+      div.className = `safety-item ${c.status.toLowerCase()}`;
+      div.innerHTML = `
+        <span class="safety-badge">${c.status}</span>
+        <div class="safety-name">${c.name}</div>
+        <div class="safety-detail">${c.detail}</div>
+      `;
+      grid.appendChild(div);
+    });
+
+    document.getElementById('safetySection').style.display = 'block';
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
   }
 </script>
 </body>
