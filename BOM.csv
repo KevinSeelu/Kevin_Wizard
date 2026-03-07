@@ -1,0 +1,13 @@
+name,part_number,voltage,price_usd,package,in_stock,digikey_url
+Arduino-Uno-R3,A000066,5.0,27.6,THT,True,https://www.digikey.com/en/products/detail/arduino/A000066/2646302
+Red-LED-Resistor,CF14JT220R,0.0,0.1,THT,True,https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT220R/1741366
+Yellow-LED-Resistor,CF14JT1K00,3.3,0.1,THT,True,https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741364
+Green-LED-Resistor,CRA06S083220RJTA,3.3,0.12,SMD,True,https://www.digikey.com/en/products/detail/vishay-dale/CRA06S083220RJTA/1154564
+Red-LED,C503B-RAN-CA0C0AA1,2.1,0.28,THT,True,https://www.digikey.com/en/products/detail/cree-led/C503B-RAN-CA0C0AA1/2335687
+Yellow-LED,C503B-YAN-CB0F0251,2.1,0.32,THT,True,https://www.digikey.com/en/products/detail/cree-led/C503B-YAN-CB0F0251/2335684
+Green-LED,C503B-GAS-CB0F0791,3.2,0.22,THT,True,https://www.digikey.com/en/products/detail/cree-led/C503B-GAS-CB0F0791/2335805
+USB-5V-Supply,USB-5V-PWR-MOD,5.0,1.25,THT,True,https://www.digikey.com/en/products/detail/adafruit-industries-llc/1510/5353683
+System-Ground,N/A,0.0,0.0,N/A,False,https://www.digikey.com/
+Red-LED-Protection-Diode,1N4148,100.0,0.05,THT,True,https://www.digikey.com/en/products/detail/onsemi/1N4148/458603
+Yellow-LED-Protection-Diode,1N4148,100.0,0.05,THT,True,https://www.digikey.com/en/products/detail/onsemi/1N4148/458603
+Green-LED-Protection-Diode,1N4148,100.0,0.05,THT,True,https://www.digikey.com/en/products/detail/onsemi/1N4148/458603

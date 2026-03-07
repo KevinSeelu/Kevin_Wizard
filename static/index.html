@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kevin the Wizard — Circuit Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #111111;
+    --border: #222222;
+    --accent: #00ff88;
+    --accent2: #ff6b35;
+    --warn: #ffd93d;
+    --text: #e8e8e8;
+    --muted: #555;
+    --fail: #ff4444;
+    --pass: #00ff88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 56px;
+  }
+
+  .header-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .header-tag::before {
+    content: '';
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 8vw, 88px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  h1 span {
+    color: var(--accent);
+    display: block;
+  }
+
+  .subtitle {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 300;
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  /* Pipeline steps indicator */
+  .pipeline-steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 40px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .step {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-right: 1px solid var(--border);
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .step:last-child { border-right: none; }
+
+  .step.active {
+    color: var(--accent);
+    background: rgba(0,255,136,0.05);
+  }
+
+  .step.done {
+    color: var(--accent);
+    background: rgba(0,255,136,0.08);
+  }
+
+  .step.done::after {
+    content: ' OK';
+    color: var(--accent);
+  }
+
+  .step-num {
+    display: block;
+    font-size: 18px;
+    font-family: 'Bebas Neue', sans-serif;
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+  }
+
+  /* Input area */
+  .input-section {
+    margin-bottom: 32px;
+  }
+
+  .input-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .input-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    transition: border-color 0.3s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,255,136,0.15), 0 0 20px rgba(0,255,136,0.05);
+  }
+
+  textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    padding: 20px;
+    resize: none;
+    height: 110px;
+    line-height: 1.6;
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  .input-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .char-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* Example chips */
+  .examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .example-chip {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    background: transparent;
+  }
+
+  .example-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,255,136,0.05);
+  }
+
+  /* Submit button */
+  .btn-run {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-run:hover:not(:disabled) {
+    background: #00ffaa;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(0,255,136,0.3);
+  }
+
+  .btn-run:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Terminal log */
+  .log-section {
+    margin-top: 32px;
+    display: none;
+  }
+
+  .log-section.visible { display: block; }
+
+  .log-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .log-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .log-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .terminal {
+    background: #050505;
+    border: 1px solid var(--border);
+    padding: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    line-height: 1.9;
+    min-height: 120px;
+    max-height: 280px;
+    overflow-y: auto;
+    color: #888;
+  }
+
+  .terminal .line { display: block; }
+  .terminal .line.info { color: #888; }
+  .terminal .line.success { color: var(--pass); }
+  .terminal .line.warn { color: var(--warn); }
+  .terminal .line.error { color: var(--fail); }
+  .terminal .line.accent { color: var(--accent); }
+  .terminal .line.fix { color: var(--accent2); }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 12px;
+    background: var(--accent);
+    animation: blink 0.8s infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Download section */
+  .download-section {
+    margin-top: 32px;
+    display: none;
+  }
+
+  .download-section.visible { display: block; }
+
+  .download-box {
+    border: 1px solid var(--accent);
+    background: rgba(0,255,136,0.03);
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .download-info .label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .download-info .filename {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .download-info .file-list {
+    margin-top: 8px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .file-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-download {
+    padding: 14px 32px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-download:hover {
+    background: var(--accent);
+    color: #000;
+  }
+
+  /* Error box */
+  .error-box {
+    margin-top: 24px;
+    border: 1px solid var(--fail);
+    background: rgba(255,68,68,0.05);
+    padding: 16px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--fail);
+    display: none;
+  }
+
+  .error-box.visible { display: block; }
+
+  /* Footer */
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .status-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  @media (max-width: 600px) {
+    .pipeline-steps { display: none; }
+    .download-box { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-tag">AI-Powered Electronics Pipeline</div>
+    <h1>Kevin<span>the Wizard</span></h1>
+    <p class="subtitle">Describe your circuit in plain English. The pipeline generates a JSON netlist, runs AI-powered safety checks, auto-fixes issues, and outputs a complete design package.</p>
+  </header>
+
+  <!-- Pipeline steps -->
+  <div class="pipeline-steps">
+    <div class="step" id="step1"><span class="step-num">01</span>Generate</div>
+    <div class="step" id="step2"><span class="step-num">02</span>Check</div>
+    <div class="step" id="step3"><span class="step-num">03</span>Auto-Fix</div>
+    <div class="step" id="step4"><span class="step-num">04</span>BOM</div>
+    <div class="step" id="step5"><span class="step-num">05</span>Package</div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-section">
+    <label class="input-label" for="circuit-input">Circuit Description</label>
+    <div class="input-wrap">
+      <textarea
+        id="circuit-input"
+        placeholder="e.g. ESP32 with stepper motor driver on 3S LiPo battery with status LED..."
+        maxlength="500"
+        oninput="updateCount()"
+      ></textarea>
+      <div class="input-footer">
+        <span class="char-count" id="char-count">0 / 500</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Example chips -->
+  <div class="examples">
+    <button class="example-chip" onclick="setExample('Traffic signal circuit using Arduino Uno R3')">Traffic Light / Arduino</button>
+    <button class="example-chip" onclick="setExample('ESP32 with stepper motor driver on 3S LiPo battery')">ESP32 Stepper Motor</button>
+    <button class="example-chip" onclick="setExample('Raspberry Pi IoT sensor node with temperature and humidity sensor on USB power')">IoT Sensor Node</button>
+    <button class="example-chip" onclick="setExample('Arduino robot car with dual DC motors and ultrasonic distance sensor')">Robot Car</button>
+  </div>
+
+  <!-- Run button -->
+  <button class="btn-run" id="run-btn" onclick="runPipeline()">
+    RUN PIPELINE
+  </button>
+
+  <!-- Terminal log -->
+  <div class="log-section" id="log-section">
+    <div class="log-header">
+      <div class="log-dot" id="log-dot"></div>
+      <span class="log-title">Pipeline Output</span>
+    </div>
+    <div class="terminal" id="terminal"></div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="error-box"></div>
+
+  <!-- Download -->
+  <div class="download-section" id="download-section">
+    <div class="download-box">
+      <div class="download-info">
+        <div class="label">Output Ready</div>
+        <div class="filename">kevin_wizard_output.zip</div>
+        <div class="file-list">
+          <span class="file-badge">output.json</span>
+          <span class="file-badge">safety_report.txt</span>
+          <span class="file-badge">diagram.md</span>
+          <span class="file-badge">BOM.csv</span>
+        </div>
+      </div>
+      <a class="btn-download" id="download-btn" href="#">DOWNLOAD ZIP</a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span class="footer-left">Kevin the Wizard v1.0 &mdash; AI Circuit Pipeline</span>
+    <span class="status-dot">Gemini 3.1 Flash-Lite</span>
+  </footer>
+
+</div>
+
+<script>
+  let zipBlob = null;
+
+  function updateCount() {
+    const val = document.getElementById('circuit-input').value.length;
+    document.getElementById('char-count').textContent = `${val} / 500`;
+  }
+
+  function setExample(text) {
+    document.getElementById('circuit-input').value = text;
+    updateCount();
+  }
+
+  function log(msg, type = 'info') {
+    const terminal = document.getElementById('terminal');
+    // Remove cursor if present
+    const existing = terminal.querySelector('.cursor-line');
+    if (existing) existing.remove();
+
+    const line = document.createElement('span');
+    line.className = `line ${type}`;
+    line.textContent = `> ${msg}`;
+    terminal.appendChild(line);
+    terminal.appendChild(document.createElement('br'));
+
+    // Add blinking cursor
+    const cursorLine = document.createElement('span');
+    cursorLine.className = 'cursor-line';
+    cursorLine.innerHTML = '<span class="cursor"></span>';
+    terminal.appendChild(cursorLine);
+
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  function removeCursor() {
+    const terminal = document.getElementById('terminal');
+    const existing = terminal.querySelector('.cursor-line');
+    if (existing) existing.remove();
+  }
+
+  function setStep(n, done = false) {
+    for (let i = 1; i <= 5; i++) {
+      const el = document.getElementById(`step${i}`);
+      el.classList.remove('active', 'done');
+      if (i < n) el.classList.add('done');
+      if (i === n) el.classList.add('active');
+    }
+  }
+
+  async function runPipeline() {
+    const input = document.getElementById('circuit-input').value.trim();
+    if (!input) {
+      document.getElementById('circuit-input').focus();
+      return;
+    }
+
+    // Reset UI
+    document.getElementById('run-btn').disabled = true;
+    document.getElementById('run-btn').textContent = 'RUNNING...';
+    document.getElementById('terminal').innerHTML = '';
+    document.getElementById('log-section').classList.add('visible');
+    document.getElementById('download-section').classList.remove('visible');
+    document.getElementById('error-box').classList.remove('visible');
+    document.getElementById('log-dot').style.animationPlayState = 'running';
+    zipBlob = null;
+
+    setStep(1);
+    log('Pipeline started...', 'accent');
+    log(`Request: "${input}"`, 'info');
+
+    await sleep(400);
+    setStep(1);
+    log('Sending to Gemini — generating circuit netlist...', 'info');
+
+    await sleep(600);
+    setStep(2);
+    log('Running AI-powered safety checks...', 'info');
+
+    await sleep(400);
+    setStep(3);
+    log('Auto-fix loop initialised...', 'info');
+
+    await sleep(300);
+    setStep(4);
+    log('Preparing BOM — fetching component data...', 'info');
+
+    await sleep(300);
+    setStep(5);
+    log('Packaging output files into ZIP...', 'info');
+
+    try {
+      const response = await fetch('/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request: input })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Server error');
+      }
+
+      const blob = await response.blob();
+      zipBlob = blob;
+
+      removeCursor();
+      log('output.json generated successfully.', 'success');
+      log('Safety checks complete.', 'success');
+      log('Auto-fix loop finished.', 'success');
+      log('BOM.csv written.', 'success');
+      log('diagram.md generated.', 'success');
+      log('ZIP package ready for download.', 'accent');
+
+      // Set download link
+      const url = URL.createObjectURL(blob);
+      document.getElementById('download-btn').href = url;
+      document.getElementById('download-btn').download = 'kevin_wizard_output.zip';
+
+      // Show download section
+      document.getElementById('download-section').classList.add('visible');
+      setStep(6); // all done
+
+      // Mark all steps done
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById(`step${i}`);
+        el.classList.remove('active');
+        el.classList.add('done');
+      }
+
+    } catch (err) {
+      removeCursor();
+      log(`ERROR: ${err.message}`, 'error');
+      document.getElementById('error-box').textContent = `Error: ${err.message}`;
+      document.getElementById('error-box').classList.add('visible');
+    } finally {
+      document.getElementById('run-btn').disabled = false;
+      document.getElementById('run-btn').textContent = 'RUN PIPELINE';
+      document.getElementById('log-dot').style.animationPlayState = 'paused';
+    }
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+</script>
+</body>
+</html>

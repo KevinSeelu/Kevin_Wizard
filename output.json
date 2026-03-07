@@ -1,0 +1,146 @@
+{
+  "components": [
+    {
+      "id": "U1",
+      "name": "Arduino-Uno-R3",
+      "type": "MCU",
+      "voltage": 5.0
+    },
+    {
+      "id": "R1",
+      "name": "Red-LED-Resistor",
+      "type": "Passive",
+      "voltage": 5.0
+    },
+    {
+      "id": "R2",
+      "name": "Yellow-LED-Resistor",
+      "type": "Passive",
+      "voltage": 5.0
+    },
+    {
+      "id": "R3",
+      "name": "Green-LED-Resistor",
+      "type": "Passive",
+      "voltage": 5.0
+    },
+    {
+      "id": "L1",
+      "name": "Red-LED",
+      "type": "Output",
+      "voltage": 2.0
+    },
+    {
+      "id": "L2",
+      "name": "Yellow-LED",
+      "type": "Output",
+      "voltage": 2.1
+    },
+    {
+      "id": "L3",
+      "name": "Green-LED",
+      "type": "Output",
+      "voltage": 3.2
+    },
+    {
+      "id": "PS1",
+      "name": "USB-5V-Supply",
+      "type": "Power-Source",
+      "voltage": 5.0
+    },
+    {
+      "id": "GND1",
+      "name": "System-Ground",
+      "type": "Ground",
+      "voltage": 0.0
+    },
+    {
+      "id": "D1",
+      "name": "Red-LED-Protection-Diode",
+      "type": "Protection-Diode",
+      "voltage": 0.7
+    },
+    {
+      "id": "D2",
+      "name": "Yellow-LED-Protection-Diode",
+      "type": "Protection-Diode",
+      "voltage": 0.7
+    },
+    {
+      "id": "D3",
+      "name": "Green-LED-Protection-Diode",
+      "type": "Protection-Diode",
+      "voltage": 0.7
+    }
+  ],
+  "connections": [
+    {
+      "from": "PS1",
+      "to": "Arduino-Uno-R3"
+    },
+    {
+      "from": "Arduino-Uno-R3",
+      "to": "Red-LED-Resistor"
+    },
+    {
+      "from": "Red-LED-Resistor",
+      "to": "L1"
+    },
+    {
+      "from": "L1",
+      "to": "GND1"
+    },
+    {
+      "from": "Arduino-Uno-R3",
+      "to": "Yellow-LED-Resistor"
+    },
+    {
+      "from": "Yellow-LED-Resistor",
+      "to": "L2"
+    },
+    {
+      "from": "L2",
+      "to": "GND1"
+    },
+    {
+      "from": "Arduino-Uno-R3",
+      "to": "Green-LED-Resistor"
+    },
+    {
+      "from": "Green-LED-Resistor",
+      "to": "L3"
+    },
+    {
+      "from": "L3",
+      "to": "GND1"
+    },
+    {
+      "from": "U1",
+      "to": "GND1"
+    },
+    {
+      "from": "L1",
+      "to": "D1"
+    },
+    {
+      "from": "D1",
+      "to": "Arduino-Uno-R3"
+    },
+    {
+      "from": "L2",
+      "to": "D2"
+    },
+    {
+      "from": "D2",
+      "to": "Arduino-Uno-R3"
+    },
+    {
+      "from": "L3",
+      "to": "D3"
+    },
+    {
+      "from": "D3",
+      "to": "Arduino-Uno-R3"
+    }
+  ]
+}
