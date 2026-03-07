@@ -5,7 +5,8 @@ import re
 import time
 import requests
 from datetime import datetime
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 
 
@@ -13,43 +14,99 @@ from dotenv import load_dotenv
 #  STEP 1: SETUP
 # ==============================================================
 load_dotenv()
-# Get your free key from https://aistudio.google.com/
-genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
+client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
 
-# Initialize the LATEST 2026 Free Model
-# Model: Gemini 3.1 Flash-Lite (Released March 3, 2026)
-model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash",
-    system_instruction="""
-    You are a Senior Hardware Engineer (PS1 Specialist). 
-    Your job is to parse descriptions into a JSON Netlist.
-    Rules:
-    - Return ONLY raw JSON. No markdown blocks (no ```).
-    - Include: MCU, Power Stage (LDO/Buck), Motor Drivers, and Passives.
-    - Format: {"components": [{"id": "U1", "name": "ESP32-S3", "type": "MCU", "voltage": 3.3}], "connections": [{"from": "LiPo", "to": "ESP32"}]}
-    - Each component MUST include: id, name, type, and voltage fields.
-    - connections must use "from" and "to" keys matching component names.
-    - Output ONLY raw JSON. Do not include '```json' markdown tags or any introductory text. If you fail this, the system will crash.
-    """
-)
+MODEL = "gemini-2.0-flash-lite"
+
+NETLIST_SYSTEM = """
+You are a Senior Hardware Engineer (PCB Specialist).
+Your job is to parse descriptions into a JSON Netlist.
+Rules:
+- Return ONLY raw JSON. No markdown blocks (no ```).
+- Include: MCU, Power Stage (LDO/Buck), Motor Drivers, and Passives.
+- Format: {"components": [{"id": "U1", "name": "ESP32-S3", "type": "MCU", "voltage": 3.3}], "connections": [{"from": "LiPo", "to": "ESP32"}]}
+- Each component MUST include: id, name, type, and voltage fields.
+- connections must use "from" and "to" keys matching component names.
+- Output ONLY raw JSON. Do not include backtick markdown tags or any introductory text.
+"""
+
+SAFETY_SYSTEM = """
+You are a Senior Electrical Safety Engineer.
+You will be given a circuit JSON with components and connections.
+
+Your job:
+1. Identify what type of project this is (e.g. traffic light, motor controller, IoT sensor, etc.)
+2. Generate and run 5-8 safety checks that are SPECIFIC and RELEVANT to that project type.
+3. For each check, evaluate it against the actual components and connections in the JSON.
+
+Return ONLY a raw JSON array like this (no markdown, no explanation):
+[
+  {
+    "check": "Check Name",
+    "status": "PASS or FAIL or WARN or SKIP",
+    "detail": "Specific explanation referencing actual components in the design."
+  }
+]
+
+Status rules:
+- PASS = everything looks good
+- FAIL = serious issue that must be fixed
+- WARN = potential issue worth noting
+- SKIP = check not applicable to this design
+
+Return ONLY the raw JSON array. No markdown. No extra text.
+"""
+
+FIX_SYSTEM = """
+You are a Senior Hardware Engineer and circuit repair specialist.
+You will be given a circuit JSON and a list of FAIL safety checks.
+
+Your job:
+- Fix EVERY fail by modifying the circuit JSON
+- Add missing components and connections
+- Do NOT remove any existing components or connections
+- Keep the same JSON format
+
+Return ONLY raw JSON in this exact format (no markdown, no extra text):
+{
+  "fixed_circuit": { ...the full updated circuit JSON... },
+  "fixes_applied": ["Fix 1: ...", "Fix 2: ..."]
+}
+"""
+
+LOOKUP_SYSTEM = """
+You are an electronics component database.
+When given a component name, return ONLY raw JSON with these exact fields:
+{
+  "part_number": "...",
+  "voltage": 3.3,
+  "price_usd": 0.50,
+  "package": "THT or SMD",
+  "in_stock": true,
+  "digikey_url": "https://www.digikey.com/..."
+}
+Return ONLY raw JSON. No markdown, no explanation.
+"""
 
 
 # ==============================================================
 #  GEMINI RATE-LIMIT SAFE CALLER
 # ==============================================================
-def gemini_call_with_retry(model, prompt, max_retries=3):
-    """
-    Calls Gemini and automatically waits + retries if rate limited.
-    """
+def gemini_call_with_retry(system_instruction, prompt, max_retries=3):
     for attempt in range(1, max_retries + 1):
         try:
-            response = model.generate_content(prompt)
-            return response
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                )
+            )
+            return response.text
         except Exception as e:
             error_str = str(e)
             if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
-                # Extract wait time from error if available, default to 60s
-                wait_match = re.search(r'retry_delay\s*\{\s*seconds:\s*(\d+)', error_str)
+                wait_match = re.search(r'seconds:\s*(\d+)', error_str)
                 wait_seconds = int(wait_match.group(1)) + 5 if wait_match else 60
                 print(f"\n Rate limit hit. Waiting {wait_seconds}s before retry (attempt {attempt}/{max_retries})...")
                 time.sleep(wait_seconds)
@@ -88,62 +145,13 @@ SAMPLE_JSON = {
 #  STEP 3: STATIC COMPONENT DATABASE
 # ==============================================================
 COMPONENTS = {
-    "ESP32": {
-        "part_number": "ESP32-WROOM-32E",
-        "voltage": 3.3,
-        "price_usd": 3.50,
-        "package": "SMD",
-        "in_stock": True,
-        "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"
-    },
-    "L298N": {
-        "part_number": "L298N",
-        "voltage": 5,
-        "price_usd": 1.80,
-        "package": "THT",
-        "in_stock": True,
-        "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"
-    },
-    "TP4056": {
-        "part_number": "TP4056-SOT25",
-        "voltage": 4.2,
-        "price_usd": 0.30,
-        "package": "SMD",
-        "in_stock": True,
-        "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"
-    },
-    "LiPo Battery": {
-        "part_number": "PRT-13854",
-        "voltage": 3.7,
-        "price_usd": 9.95,
-        "package": "THT",
-        "in_stock": True,
-        "digikey_url": "https://www.sparkfun.com/products/13854"
-    },
-    "AMS1117-3.3": {
-        "part_number": "AMS1117-3.3",
-        "voltage": 3.3,
-        "price_usd": 0.25,
-        "package": "SMD",
-        "in_stock": True,
-        "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"
-    },
-    "Decoupling Capacitor": {
-        "part_number": "C0402C104K5RACTU",
-        "voltage": 10,
-        "price_usd": 0.05,
-        "package": "SMD",
-        "in_stock": True,
-        "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"
-    },
-    "ESD Diode": {
-        "part_number": "PRTR5V0U2X",
-        "voltage": 5,
-        "price_usd": 0.40,
-        "package": "SMD",
-        "in_stock": True,
-        "digikey_url": "https://www.digikey.com/en/products/detail/nexperia-usa-inc/PRTR5V0U2X/1177477"
-    },
+    "ESP32": {"part_number": "ESP32-WROOM-32E", "voltage": 3.3, "price_usd": 3.50, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"},
+    "L298N": {"part_number": "L298N", "voltage": 5, "price_usd": 1.80, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"},
+    "TP4056": {"part_number": "TP4056-SOT25", "voltage": 4.2, "price_usd": 0.30, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"},
+    "LiPo Battery": {"part_number": "PRT-13854", "voltage": 3.7, "price_usd": 9.95, "package": "THT", "in_stock": True, "digikey_url": "https://www.sparkfun.com/products/13854"},
+    "AMS1117-3.3": {"part_number": "AMS1117-3.3", "voltage": 3.3, "price_usd": 0.25, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"},
+    "Decoupling Capacitor": {"part_number": "C0402C104K5RACTU", "voltage": 10, "price_usd": 0.05, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"},
+    "ESD Diode": {"part_number": "PRTR5V0U2X", "voltage": 5, "price_usd": 0.40, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/nexperia-usa-inc/PRTR5V0U2X/1177477"},
 }
 
 
@@ -153,14 +161,11 @@ COMPONENTS = {
 def generate_and_save_json(user_request):
     try:
         print(f"Sending to Gemini: '{user_request}'\n")
-        response = gemini_call_with_retry(model, user_request)
-
+        text = gemini_call_with_retry(NETLIST_SYSTEM, user_request)
         with open("output.json", "w") as f:
-            f.write(response.text)
-
-        print("Success! Design logic saved to output.json using Gemini 3.1 Flash-Lite.")
+            f.write(text)
+        print("Success! Design logic saved to output.json.")
         return True
-
     except Exception as e:
         print(f"Error: {e}. Make sure your API key is in the .env file.")
         return False
@@ -180,69 +185,20 @@ def load_json():
 
 
 # ==============================================================
-#  STEP 6: SMART AI-POWERED SAFETY CHECKS (Gemini)
+#  STEP 6: SMART AI-POWERED SAFETY CHECKS
 # ==============================================================
 def run_checks(data):
-    """
-    Sends the full circuit JSON to Gemini.
-    Gemini detects the project type and runs relevant safety checks.
-    Returns a list of result dicts with check, status, detail.
-    """
     print("\n Asking Gemini to analyse the circuit and run smart safety checks...\n")
-
-    safety_model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        system_instruction="""
-        You are a Senior Electrical Safety Engineer.
-        You will be given a circuit JSON with components and connections.
-
-        Your job:
-        1. Identify what type of project this is (e.g. traffic light, motor controller, IoT sensor, etc.)
-        2. Generate and run 5-8 safety checks that are SPECIFIC and RELEVANT to that project type.
-           - Do NOT use generic checks for every project. Tailor them.
-           - Example: for a traffic light, check LED resistors, timing logic, power supply.
-           - Example: for a motor driver, check current ratings, flyback diodes, voltage levels.
-           - Example: for IoT/WiFi, check antenna clearance, decoupling caps, power filtering.
-        3. For each check, evaluate it against the actual components and connections in the JSON.
-
-        Return ONLY a raw JSON array like this (no markdown, no explanation):
-        [
-          {
-            "check": "Check Name",
-            "status": "PASS or FAIL or WARN or SKIP",
-            "detail": "Specific explanation referencing actual components in the design."
-          }
-        ]
-
-        Status rules:
-        - PASS = everything looks good
-        - FAIL = serious issue that must be fixed
-        - WARN = potential issue worth noting
-        - SKIP = check not applicable to this design
-
-        Be specific. Reference actual component names from the JSON in your details.
-        Return ONLY the raw JSON array. No markdown. No extra text.
-        """
-    )
-
     try:
         circuit_summary = json.dumps(data, indent=2)
-        response = gemini_call_with_retry(
-            safety_model,
-            f"Analyse this circuit and run smart safety checks:\n\n{circuit_summary}"
-        )
-        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+        raw = gemini_call_with_retry(SAFETY_SYSTEM, f"Analyse this circuit and run smart safety checks:\n\n{circuit_summary}")
+        raw = raw.strip().replace("```json", "").replace("```", "").strip()
         results = json.loads(raw)
         print(f" Gemini generated {len(results)} smart safety checks for this project.")
         return results
-
     except Exception as e:
         print(f"  Smart checks failed ({e}). Returning error result.")
-        return [{
-            "check": "AI Safety Check",
-            "status": "WARN",
-            "detail": f"Could not run smart checks: {e}"
-        }]
+        return [{"check": "AI Safety Check", "status": "WARN", "detail": f"Could not run smart checks: {e}"}]
 
 
 # ==============================================================
@@ -299,7 +255,6 @@ def print_and_save_report(results, data):
 #  STEP 8: AUTO-FETCH UNKNOWN COMPONENTS
 # ==============================================================
 def fetch_from_web(component_name):
-    """Try DigiKey first."""
     try:
         search_url = f"https://www.digikey.com/en/products/result?keywords={component_name.replace(' ', '+')}"
         headers = {"User-Agent": "Mozilla/5.0"}
@@ -308,40 +263,16 @@ def fetch_from_web(component_name):
             price_match = re.search(r'\$(\d+\.\d+)', response.text)
             price = float(price_match.group(1)) if price_match else 1.00
             print(f"   Web fetch succeeded for '{component_name}' (DigiKey)")
-            return {
-                "part_number": component_name.upper().replace(" ", "-"),
-                "voltage": 5.0,
-                "price_usd": price,
-                "package": "THT",
-                "in_stock": True,
-                "digikey_url": search_url
-            }
+            return {"part_number": component_name.upper().replace(" ", "-"), "voltage": 5.0, "price_usd": price, "package": "THT", "in_stock": True, "digikey_url": search_url}
     except Exception as e:
         print(f"    Web fetch failed for '{component_name}': {e}")
     return None
 
 
 def fetch_from_gemini(component_name):
-    """Fallback to Gemini AI."""
     try:
-        lookup_model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction="""
-            You are an electronics component database.
-            When given a component name, return ONLY raw JSON with these exact fields:
-            {
-              "part_number": "...",
-              "voltage": 3.3,
-              "price_usd": 0.50,
-              "package": "THT or SMD",
-              "in_stock": true,
-              "digikey_url": "https://www.digikey.com/..."
-            }
-            Return ONLY raw JSON. No markdown, no explanation.
-            """
-        )
-        response = gemini_call_with_retry(lookup_model, f"Give me component details for: {component_name}")
-        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+        raw = gemini_call_with_retry(LOOKUP_SYSTEM, f"Give me component details for: {component_name}")
+        raw = raw.strip().replace("```json", "").replace("```", "").strip()
         data = json.loads(raw)
         print(f"   Gemini fallback succeeded for '{component_name}'")
         return data
@@ -351,7 +282,6 @@ def fetch_from_gemini(component_name):
 
 
 def auto_fetch_component(component_name):
-    """Try web first, then Gemini, then placeholder."""
     print(f"\n Auto-fetching unknown component: '{component_name}'")
     result = fetch_from_web(component_name)
     if result:
@@ -359,25 +289,14 @@ def auto_fetch_component(component_name):
     result = fetch_from_gemini(component_name)
     if result:
         return result
-    print(f"    Could not fetch '{component_name}'  using placeholder.")
-    return {
-        "part_number": "UNKNOWN",
-        "voltage": 0,
-        "price_usd": 0.00,
-        "package": "UNKNOWN",
-        "in_stock": False,
-        "digikey_url": "N/A"
-    }
+    print(f"    Could not fetch '{component_name}' - using placeholder.")
+    return {"part_number": "UNKNOWN", "voltage": 0, "price_usd": 0.00, "package": "UNKNOWN", "in_stock": False, "digikey_url": "N/A"}
 
 
 # ==============================================================
 #  STEP 9: GENERATE BOM
 # ==============================================================
 def generate_bom(data, csv_path="BOM.csv"):
-    """
-    Takes loaded circuit data, enriches all components
-    (auto-fetching unknowns), and writes BOM.csv.
-    """
     print("\n" + "=" * 60)
     print("  GENERATING BILL OF MATERIALS (BOM)")
     print("=" * 60)
@@ -403,7 +322,7 @@ def generate_bom(data, csv_path="BOM.csv"):
         writer.writerows(enriched)
 
     total = round(sum(c["price_usd"] for c in enriched), 2)
-    print(f"\n BOM.csv written  {len(enriched)} components, estimated cost: ${total}")
+    print(f"\n BOM.csv written - {len(enriched)} components, estimated cost: ${total}")
 
     unknown = [c["name"] for c in enriched if c["part_number"] == "UNKNOWN"]
     if unknown:
@@ -416,17 +335,10 @@ def generate_bom(data, csv_path="BOM.csv"):
 #  STEP 10: AUTO-FIX FAILS
 # ==============================================================
 def auto_fix(data, results):
-    """
-    Finds all FAIL results, sends them + the circuit JSON to Gemini.
-    Gemini returns:
-      - A fixed version of the JSON (with added components/connections)
-      - A plain English explanation of every change made
-    Overwrites output.json with the fixed design.
-    """
     fails = [r for r in results if r["status"] == "FAIL"]
 
     if not fails:
-        print("\n No FAILs found  nothing to auto-fix!")
+        print("\n No FAILs found - nothing to auto-fix!")
         return data
 
     print("\n" + "=" * 60)
@@ -436,59 +348,20 @@ def auto_fix(data, results):
     for f in fails:
         print(f"   Fixing: [{f['check']}]  {f['detail'][:60]}...")
 
-    fix_model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        system_instruction="""
-        You are a Senior Hardware Engineer and circuit repair specialist.
-        You will be given:
-        1. A circuit JSON (components + connections)
-        2. A list of FAIL safety checks that need to be fixed
-
-        Your job:
-        - Fix EVERY fail by modifying the circuit JSON
-        - Add missing components (e.g. level shifters, resistors, fuses, capacitors)
-        - Add missing connections for the new components
-        - Do NOT remove any existing components or connections
-        - Keep the same JSON format: {"components": [...], "connections": [...]}
-        - Each component must have: id, name, type, voltage fields
-
-        Return ONLY raw JSON in this exact format (no markdown, no extra text):
-        {
-          "fixed_circuit": { ...the full updated circuit JSON... },
-          "fixes_applied": [
-            "Fix 1: Added TXS0108E level shifter between ESP32-S3 and DRV8833 to resolve 3.3V/5V mismatch",
-            "Fix 2: Added 100nF decoupling capacitor C2 near MCU power pin",
-            "Fix 3: ..."
-          ]
-        }
-        """
-    )
-
     try:
-        prompt = f"""
-Circuit JSON:
-{json.dumps(data, indent=2)}
-
-FAIL checks to fix:
-{json.dumps(fails, indent=2)}
-
-Fix all the FAILs and return the updated circuit with explanation.
-        """
-
-        response = gemini_call_with_retry(fix_model, prompt)
-        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+        prompt = f"Circuit JSON:\n{json.dumps(data, indent=2)}\n\nFAIL checks to fix:\n{json.dumps(fails, indent=2)}\n\nFix all the FAILs and return the updated circuit with explanation."
+        raw = gemini_call_with_retry(FIX_SYSTEM, prompt)
+        raw = raw.strip().replace("```json", "").replace("```", "").strip()
         result = json.loads(raw)
 
         fixed_circuit = result.get("fixed_circuit", data)
         fixes_applied = result.get("fixes_applied", [])
 
-        # Print explanation of what was fixed
         print("\n FIXES APPLIED:")
         print("-" * 60)
         for i, fix in enumerate(fixes_applied, 1):
             print(f"  {i}. {fix}")
 
-        # Overwrite output.json with fixed design
         with open("output.json", "w") as f:
             json.dump(fixed_circuit, f, indent=2)
 
@@ -506,22 +379,14 @@ Fix all the FAILs and return the updated circuit with explanation.
 if __name__ == "__main__":
     print("Kevin the Wizard's Safety Checker starting...\n")
 
-    #  Describe your circuit here 
     user_request = "traffic signal circuit using arduino uno r3"
+    MAX_FIX_ROUNDS = 5
 
-    MAX_FIX_ROUNDS = 5  # Safety cap  prevents infinite loop
-
-    # 1. Generate JSON from Gemini
     generate_and_save_json(user_request)
-
-    # 2. Load the JSON
     data = load_json()
-
-    # 3. Run first safety check
     results = run_checks(data)
     print_and_save_report(results, data)
 
-    # 4. Auto-fix loop  keep fixing until zero FAILs or max rounds hit
     fix_round = 0
     while True:
         fails = [r for r in results if r["status"] == "FAIL"]
@@ -536,20 +401,14 @@ if __name__ == "__main__":
             break
 
         fix_round += 1
-        print(f"\n FIX ROUND {fix_round}  {len(fails)} FAIL(s) remaining...")
-
-        # Fix the FAILs
+        print(f"\n FIX ROUND {fix_round} - {len(fails)} FAIL(s) remaining...")
         data = auto_fix(data, results)
-
-        # Re-run checks on the fixed design
         print(f"\n Re-running safety checks after round {fix_round}...\n")
         results = run_checks(data)
         print_and_save_report(results, data)
 
-    # 5. Final summary
     print("\n" + "=" * 60)
-    print(f"  PIPELINE COMPLETE  {fix_round} fix round(s) applied.")
+    print(f"  PIPELINE COMPLETE - {fix_round} fix round(s) applied.")
     print("=" * 60)
 
-    # 6. Generate BOM from final clean design
     generate_bom(data)
