@@ -528,6 +528,41 @@
     margin-right: 0.4rem;
   }
 
+  /* ── TABS ── */
+  .tabs-panel { margin-bottom: 1.5rem; }
+  .tab-bar {
+    display: flex;
+    border-bottom: 2px solid var(--brass-dark);
+    margin-bottom: 0;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    padding: 0.75rem 1.4rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(212,184,150,0.45);
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .tab-btn:hover { color: var(--parchment-dark); }
+  .tab-btn.active {
+    color: var(--brass-light);
+    border-bottom-color: var(--brass-light);
+    text-shadow: 0 0 12px rgba(200,146,42,0.4);
+  }
+  .tab-icon { font-size: 1rem; }
+  .tab-content { display: none; padding: 1.5rem; }
+  .tab-content.active { display: block; }
+
   /* ── HIDDEN ── */
   .hidden { display: none !important; }
 </style>
@@ -621,36 +656,67 @@
     </div>
   </div>
 
-  <!-- SAFETY RESULTS -->
-  <div class="brass-panel safety-panel" id="safetySection" style="display:none">
-    <div class="panel-label">✦ Safety Audit Manifest</div>
-    <div class="safety-grid" id="safetyGrid"></div>
-  </div>
-
-  <!-- DIAGRAM -->
-  <div class="brass-panel diagram-panel">
-    <div class="panel-label">✦ Schematic Cartography</div>
-    <div class="diagram-inner" id="diagramOutput">
-      <div class="diagram-placeholder">⚙ &nbsp; Circuit diagram shall appear here upon activation &nbsp; ⚙</div>
+  <!-- TABBED OUTPUT PANEL -->
+  <div class="brass-panel tabs-panel" id="outputTabs">
+    <div class="panel-label">✦ Design Output Chamber</div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('diagram')">
+        <span class="tab-icon">🗺</span> Schematic
+      </button>
+      <button class="tab-btn" onclick="switchTab('safety')">
+        <span class="tab-icon">⚠</span> Safety Audit
+        <span id="safetyBadgeTab" style="display:none;margin-left:0.3rem;background:rgba(158,58,58,0.4);color:#e07070;border:1px solid #9e3a3a;border-radius:2px;padding:0 5px;font-size:0.6rem"></span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('bom')">
+        <span class="tab-icon">📋</span> Bill of Materials
+      </button>
+      <button class="tab-btn" onclick="switchTab('download')">
+        <span class="tab-icon">⬇</span> Download
+      </button>
     </div>
-  </div>
 
-  <!-- DOWNLOAD -->
-  <div class="brass-panel download-panel" id="downloadPanel">
-    <div class="panel-label">✦ Design Package Ready</div>
-    <div class="download-inner">
-      <div>
-        <div style="font-family:'Cinzel',serif;font-size:1rem;color:var(--brass-light);margin-bottom:0.5rem">
+    <!-- DIAGRAM TAB -->
+    <div class="tab-content active" id="tab-diagram">
+      <div class="diagram-inner" id="diagramOutput">
+        <div class="diagram-placeholder">⚙ &nbsp; Circuit diagram shall appear here upon activation &nbsp; ⚙</div>
+      </div>
+    </div>
+
+    <!-- SAFETY TAB -->
+    <div class="tab-content" id="tab-safety">
+      <div class="safety-grid" id="safetyGrid">
+        <div style="color:rgba(212,184,150,0.3);font-family:'IM Fell English',serif;font-style:italic;padding:3rem;text-align:center">
+          Run the pipeline to see safety results...
+        </div>
+      </div>
+    </div>
+
+    <!-- BOM TAB -->
+    <div class="tab-content" id="tab-bom">
+      <div id="bomOutput" style="overflow-x:auto">
+        <div style="color:rgba(212,184,150,0.3);font-family:'IM Fell English',serif;font-style:italic;padding:3rem;text-align:center">
+          Run the pipeline to see the Bill of Materials...
+        </div>
+      </div>
+    </div>
+
+    <!-- DOWNLOAD TAB -->
+    <div class="tab-content" id="tab-download">
+      <div id="downloadPanel" style="display:none">
+        <div style="font-family:'Cinzel',serif;font-size:1rem;color:var(--brass-light);margin-bottom:0.8rem">
           KEVIN_WIZARD_OUTPUT.ZIP
         </div>
-        <div class="file-tags">
+        <div class="file-tags" style="margin-bottom:1.2rem">
           <span class="file-tag">output.json</span>
           <span class="file-tag">safety_report.txt</span>
           <span class="file-tag">diagram.md</span>
           <span class="file-tag">BOM.csv</span>
         </div>
+        <a class="btn-download" id="downloadBtn" href="#">⬇ RETRIEVE DESIGN PACKAGE</a>
       </div>
-      <a class="btn-download" id="downloadBtn" href="#">⬇ RETRIEVE PACKAGE</a>
+      <div id="downloadPlaceholder" style="color:rgba(212,184,150,0.3);font-family:'IM Fell English',serif;font-style:italic;padding:3rem;text-align:center">
+        Run the pipeline to generate your download package...
+      </div>
     </div>
   </div>
 
@@ -724,8 +790,11 @@
     btn.innerHTML = '<span class="spinner"></span> MECHANISMS ENGAGED...';
 
     clearLog();
-    document.getElementById('safetySection').style.display = 'none';
-    document.getElementById('downloadPanel').classList.remove('visible');
+    document.getElementById('safetyGrid').innerHTML = '<div style="color:rgba(212,184,150,0.3);font-family:\'IM Fell English\',serif;font-style:italic;padding:3rem;text-align:center">Running safety audit...</div>';
+    document.getElementById('bomOutput').innerHTML = '<div style="color:rgba(212,184,150,0.3);font-family:\'IM Fell English\',serif;font-style:italic;padding:3rem;text-align:center">Generating BOM...</div>';
+    document.getElementById('downloadPanel').style.display = 'none';
+    document.getElementById('downloadPlaceholder').style.display = 'block';
+    document.getElementById('safetyBadgeTab').style.display = 'none';
     document.getElementById('diagramOutput').innerHTML = '<div class="diagram-placeholder">⚙ &nbsp; Generating schematic... &nbsp; ⚙</div>';
     document.getElementById('passCount').textContent = '—';
     document.getElementById('failCount').textContent = '—';
@@ -774,7 +843,8 @@
 
       document.getElementById('downloadBtn').href = url;
       document.getElementById('downloadBtn').download = 'kevin_wizard_output.zip';
-      document.getElementById('downloadPanel').classList.add('visible');
+      document.getElementById('downloadPanel').style.display = 'block';
+      document.getElementById('downloadPlaceholder').style.display = 'none';
 
     } catch(err) {
       log(`ERROR: ${err.message}`, 'fail');
@@ -810,6 +880,14 @@
     if (reportFile) {
       const reportText = await reportFile.async('text');
       parseSafetyReport(reportText);
+    }
+
+    // Read BOM CSV
+    const bomFile = zip.file('BOM.csv');
+    if (bomFile) {
+      const bomText = await bomFile.async('text');
+      renderBomTable(bomText);
+      log('BOM table rendered.', 'pass');
     }
   }
 
@@ -853,7 +931,46 @@
       grid.appendChild(div);
     });
 
-    document.getElementById('safetySection').style.display = 'block';
+    // Show fail badge on tab
+    if (failCount > 0) {
+      const badge = document.getElementById('safetyBadgeTab');
+      badge.textContent = failCount + ' FAIL';
+      badge.style.display = 'inline';
+    }
+  }
+
+  function renderBomTable(csvText) {
+    const lines = csvText.trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) return;
+    const headers = lines[0].split(',');
+    const rows = lines.slice(1);
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+      <thead><tr>`;
+    headers.forEach(h => {
+      html += `<th style="text-align:left;padding:0.5rem 0.7rem;border-bottom:1px solid var(--brass-dark);font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.1em;color:var(--brass);text-transform:uppercase">${h}</th>`;
+    });
+    html += `</tr></thead><tbody>`;
+    rows.forEach((row, i) => {
+      const cells = row.split(',');
+      const isTotal = row.includes('TOTAL');
+      html += `<tr style="background:${isTotal ? 'rgba(200,146,42,0.08)' : i%2===0 ? 'rgba(0,0,0,0.2)' : 'transparent'}">`;
+      cells.forEach((cell, ci) => {
+        const isUrl = cell.startsWith('http');
+        const val = isUrl ? `<a href="${cell}" target="_blank" style="color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass-dark)">DigiKey ↗</a>` : cell;
+        html += `<td style="padding:0.45rem 0.7rem;border-bottom:1px solid rgba(200,146,42,0.08);color:${isTotal ? 'var(--brass-light)' : 'var(--parchment-dark)'};font-weight:${isTotal ? 'bold' : 'normal'}">${val}</td>`;
+      });
+      html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+    document.getElementById('bomOutput').innerHTML = html;
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    const tabs = ['diagram','safety','bom','download'];
+    document.querySelectorAll('.tab-btn')[tabs.indexOf(name)].classList.add('active');
   }
 
   function loadScript(src) {
