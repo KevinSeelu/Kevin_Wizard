@@ -34,60 +34,6 @@ body{
 @keyframes header-in{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
 @keyframes badge-pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
 
-to{opacity:1;}}
-to{opacity:0;}}
-25%{content:'.';}50%{content:'..';}75%{content:'...';}100%{content:'';}}
-}
-}
-50%{opacity:.45;filter:drop-shadow(0 0 14px #aa00ff) drop-shadow(0 0 28px #6600cc);}}
-50%{transform:scale(1.08);filter:drop-shadow(0 0 18px #cc44ff) drop-shadow(0 0 40px #8800ff) drop-shadow(0 0 60px #330066);}}
-45%{opacity:.7;}50%{opacity:.2;}55%{opacity:.7;}85%{opacity:.7;}87%{opacity:.3;}89%{opacity:.7;}}
-to{width:100%;}}
-100%{top:100%;opacity:0;}}
-92%{clip-path:polygon(0 30%,100% 30%,100% 35%,0 35%);transform:translateX(-3px);}94%{clip-path:polygon(0 60%,100% 60%,100% 65%,0 65%);transform:translateX(3px);}96%{clip-path:none;transform:none;}}
-to{opacity:1;transform:scale(1);}}
-100%{transform:scaleY(1);}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -215,70 +161,12 @@ textarea:focus{border-color:var(--brass);box-shadow:0 0 18px rgba(200,146,42,.18
 footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13);font-family:'IM Fell English',serif;font-style:italic;font-size:.76rem;color:rgba(212,184,150,.28);}
 
 /* SPINNER */
-/* IMPOSSIBLE REQUEST PANEL */
-.impossible-panel{
-  display:none;
-  background:linear-gradient(145deg,#1a0808,#2a1010,#1a0808);
-  border:2px solid #9e3a3a;
-  border-radius:4px;
-  padding:1.4rem 1.6rem;
-  margin-bottom:1.5rem;
-  position:relative;
-  box-shadow:0 0 30px rgba(158,58,58,.25),inset 0 0 30px rgba(0,0,0,.5);
-  animation:log-in .35s ease;
-}
-.impossible-panel::before,.impossible-panel::after{
-  content:'';position:absolute;width:8px;height:8px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,#e07070,#9e3a3a);
-  box-shadow:0 0 4px rgba(224,112,112,.3);z-index:1;
-}
-.impossible-panel::before{top:8px;left:10px;}
-.impossible-panel::after{bottom:8px;right:10px;}
-.impossible-title{
-  font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.25em;
-  color:#e07070;text-transform:uppercase;margin-bottom:.6rem;
-  display:flex;align-items:center;gap:.5rem;
-}
-.impossible-title::before{content:'⛔';font-size:1rem;}
-.impossible-reason{
-  font-family:'IM Fell English',serif;font-style:italic;
-  color:var(--parchment-dark);font-size:.95rem;line-height:1.6;
-  margin-bottom:1rem;padding-bottom:.8rem;
-  border-bottom:1px solid rgba(158,58,58,.3);
-}
-.impossible-suggestions-title{
-  font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;
-  color:#e0c060;text-transform:uppercase;margin-bottom:.5rem;
-}
-.impossible-suggestions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.4rem;}
-.impossible-suggestions li{
-  display:flex;align-items:flex-start;gap:.6rem;
-  font-family:'IM Fell English',serif;font-style:italic;
-  color:var(--parchment-dark);font-size:.88rem;line-height:1.5;
-}
-.impossible-suggestions li::before{content:'⚙';color:var(--brass);flex-shrink:0;margin-top:.05rem;}
-.suggestion-chip{
-  cursor:pointer;background:rgba(139,96,16,.18);
-  border:1px solid rgba(200,146,42,.25);border-radius:2px;
-  padding:.2rem .55rem;font-size:.78rem;color:var(--parchment-dark);
-  font-family:'IM Fell English',serif;font-style:italic;
-  transition:all .2s;display:inline;
-}
-.suggestion-chip:hover{background:rgba(200,146,42,.2);border-color:var(--brass);color:var(--parchment);}
-.impossible-dismiss{
-  position:absolute;top:.7rem;right:.9rem;background:transparent;
-  border:none;color:rgba(224,112,112,.45);cursor:pointer;
-  font-size:1rem;line-height:1;transition:color .2s;
-  font-family:'Cinzel',serif;
-}
-.impossible-dismiss:hover{color:#e07070;}
-
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(26,15,0,.3);border-top-color:var(--ink);border-radius:50%;animation:spin-slow .7s linear infinite;vertical-align:middle;margin-right:.4rem;}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+
 <header>
   <div class="header-top-bar">
     <span>PCB CO-PILOT v2.6 — AETHERIC FORGE SYSTEM</span>
@@ -342,16 +230,6 @@ footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13
         ⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙
       </button>
     </div>
-  </div>
-
-
-  <!-- IMPOSSIBLE REQUEST PANEL -->
-  <div class="impossible-panel" id="impossiblePanel">
-    <button class="impossible-dismiss" onclick="dismissImpossible()">✕</button>
-    <div class="impossible-title">Circuit Request Deemed Impossible</div>
-    <div class="impossible-reason" id="impossibleReason"></div>
-    <div class="impossible-suggestions-title">⚙ &nbsp; Suggested Alternatives</div>
-    <ul class="impossible-suggestions" id="impossibleSuggestions"></ul>
   </div>
 
   <!-- GAUGES + LOG -->
@@ -467,6 +345,8 @@ mermaid.initialize({startOnLoad:false,theme:'dark',themeVariables:{
   titleColor:'#e8b84b',edgeLabelBackground:'#1a1008',fontSize:'14px'
 }});
 
+
+
 function setPrompt(el){document.getElementById('circuitInput').value=el.textContent;}
 
 function log(msg,type='info'){
@@ -579,30 +459,6 @@ async function displayFromZip(blob){
   if(bf){renderBomTable(await bf.async('text'));log('BOM table rendered.','pass');}
 }
 
-
-function showImpossible(reason, suggestions){
-  document.getElementById('impossibleReason').textContent = reason;
-  const ul = document.getElementById('impossibleSuggestions');
-  ul.innerHTML = '';
-  suggestions.forEach(s => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="suggestion-chip" onclick="useSuggestion(this)">${s}</span>`;
-    ul.appendChild(li);
-  });
-  document.getElementById('impossiblePanel').style.display = 'block';
-  document.getElementById('impossiblePanel').scrollIntoView({behavior:'smooth', block:'center'});
-}
-
-function dismissImpossible(){
-  document.getElementById('impossiblePanel').style.display = 'none';
-}
-
-function useSuggestion(el){
-  document.getElementById('circuitInput').value = el.textContent;
-  dismissImpossible();
-  document.getElementById('circuitInput').focus();
-}
-
 async function runPipeline(){
   const input=document.getElementById('circuitInput').value.trim();
   if(!input){alert('Please describe your circuit first.');return;}
@@ -623,12 +479,6 @@ async function runPipeline(){
   log('Transmitting to Gemini...','step');
   try{
     const resp=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:input})});
-    if(resp.status===422){
-      const e=await resp.json();
-      showImpossible(e.message, e.suggestions||[]);
-      log('⛔ Request rejected: '+e.message,'fail');
-      return;
-    }
     if(!resp.ok){const e=await resp.json();throw new Error(e.error||'Pipeline failed');}
     log('Netlist generated.','pass');
     log('Safety audit running...','step');
