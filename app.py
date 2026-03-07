@@ -36,6 +36,55 @@ netlist_model = genai.GenerativeModel(
     """
 )
 
+
+# ==============================================================
+#  VALIDATION MODEL - checks if prompt is feasible BEFORE generating
+# ==============================================================
+validation_model = genai.GenerativeModel(
+    model_name="gemini-3.1-flash-lite-preview",
+    system_instruction="""
+    You are a Senior Hardware Engineer and circuit feasibility expert.
+    Your job is to evaluate whether a circuit design request is feasible and buildable.
+
+    A request is IMPOSSIBLE or INVALID if it:
+    - Violates fundamental laws of physics (e.g. perpetual motion, free energy)
+    - Contains contradictory requirements (e.g. "5V input but 100V output with no boost converter")
+    - Is completely unrelated to electronics or circuits (e.g. "make me a sandwich")
+    - Requests components that cannot physically work together as described
+    - Is completely vague with no actionable circuit information (e.g. "make something cool")
+
+    A request is POSSIBLE even if it is:
+    - Simple (e.g. "blink an LED with Arduino")
+    - Complex (e.g. "motor controller with battery management")
+    - Unconventional but physically valid
+
+    Return ONLY raw JSON in this exact format (no markdown, no extra text):
+    {
+      "feasible": true or false,
+      "reason": "One sentence explaining why it is or is not feasible.",
+      "suggestions": ["Specific suggestion 1", "Specific suggestion 2", "Specific suggestion 3"]
+    }
+
+    If feasible is true, suggestions should list optional improvements.
+    If feasible is false, suggestions MUST be specific actionable alternatives the user can try instead.
+    """
+)
+
+
+def validate_request(user_request):
+    """
+    Runs a feasibility check on the user prompt before any generation.
+    Returns (is_feasible, reason, suggestions).
+    """
+    try:
+        response = gemini_call_with_retry(validation_model, f"Evaluate this circuit request: {user_request}")
+        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+        result = json.loads(raw)
+        return result.get("feasible", True), result.get("reason", ""), result.get("suggestions", [])
+    except Exception as e:
+        # If validation itself fails, allow the request through
+        return True, "", []
+
 # ==============================================================
 #  STATIC COMPONENT DATABASE
 # ==============================================================
@@ -345,6 +394,15 @@ def generate():
 
         MAX_FIX_ROUNDS = 4
         all_fixes = []
+
+        # Step 0: Validate the request before doing anything
+        is_feasible, reason, suggestions = validate_request(user_request)
+        if not is_feasible:
+            return jsonify({
+                "error": "impossible_request",
+                "message": reason,
+                "suggestions": suggestions
+            }), 422
 
         # Step 1: Generate circuit JSON
         data = generate_circuit_json(user_request)
