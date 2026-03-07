@@ -40,12 +40,149 @@ netlist_model = genai.GenerativeModel(
 #  STATIC COMPONENT DATABASE
 # ==============================================================
 COMPONENTS = {
-    "ESP32": {"part_number": "ESP32-WROOM-32E", "voltage": 3.3, "price_usd": 3.50, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"},
-    "L298N": {"part_number": "L298N", "voltage": 5, "price_usd": 1.80, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"},
-    "TP4056": {"part_number": "TP4056-SOT25", "voltage": 4.2, "price_usd": 0.30, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"},
-    "AMS1117-3.3": {"part_number": "AMS1117-3.3", "voltage": 3.3, "price_usd": 0.25, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"},
-    "Decoupling Capacitor": {"part_number": "C0402C104K5RACTU", "voltage": 10, "price_usd": 0.05, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"},
+    "ESP32":               {"part_number": "ESP32-WROOM-32E",   "voltage": 3.3, "price_usd": 3.50, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"},
+    "L298N":               {"part_number": "L298N",             "voltage": 5,   "price_usd": 1.80, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"},
+    "TP4056":              {"part_number": "TP4056-SOT25",      "voltage": 4.2, "price_usd": 0.30, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"},
+    "AMS1117-3.3":         {"part_number": "AMS1117-3.3",       "voltage": 3.3, "price_usd": 0.25, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"},
+    "Decoupling Capacitor":{"part_number": "C0402C104K5RACTU", "voltage": 10,  "price_usd": 0.05, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"},
+    "Arduino-Uno-R3":      {"part_number": "A000066",           "voltage": 5.0, "price_usd": 27.60,"package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/arduino/A000066/2784006"},
+    "Red-LED":             {"part_number": "HLMP-EG08-Y2000",   "voltage": 2.0, "price_usd": 0.35, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/broadcom-limited/HLMP-EG08-Y2000/3906329"},
+    "Yellow-LED":          {"part_number": "TLHY4200",          "voltage": 2.1, "price_usd": 0.30, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHY4200/1805986"},
+    "Green-LED":           {"part_number": "TLHG4200",          "voltage": 2.2, "price_usd": 0.30, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHG4200/1806003"},
+    "Resistor-220R":       {"part_number": "CF14JT220R",        "voltage": 0,   "price_usd": 0.10, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT220R/1741547"},
+    "USB-5V-Supply":       {"part_number": "GENERIC-USB-5V",    "voltage": 5.0, "price_usd": 5.00, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/filter/usb-cables/469"},
 }
+
+# ==============================================================
+#  KICAD FOOTPRINT MAP
+# ==============================================================
+FOOTPRINT_MAP = {
+    "Arduino-Uno-R3":       ("MCU_Module",        "Arduino_Uno_R3",      "Package_DIP:DIP-28_W15.24mm"),
+    "Arduino_Uno_R3":       ("MCU_Module",        "Arduino_Uno_R3",      "Package_DIP:DIP-28_W15.24mm"),
+    "ESP32":                ("RF_Module",         "ESP32-WROOM-32",       "RF_Module:ESP32-WROOM-32"),
+    "ESP32-S3":             ("RF_Module",         "ESP32-S3-WROOM-1",     "RF_Module:ESP32-S3-WROOM-1"),
+    "STM32":                ("MCU_ST_STM32",      "STM32F103C8Tx",        "Package_QFP:LQFP-48_7x7mm"),
+    "AMS1117-3.3":          ("Device",            "Regulator_Linear",     "Package_TO_SOT_SMD:SOT-223-3_TabPin2"),
+    "TP4056":               ("Battery_Management","TP4056",               "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"),
+    "USB-5V-Supply":        ("Connector",         "USB_B",                "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    "LiPo":                 ("Device",            "Battery",              "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    "LiPo-Battery":         ("Device",            "Battery",              "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    "L298N":                ("Motor_Control",     "L298N",                "Package_TO_SOT_THT:TO-220-15"),
+    "Red-LED":              ("Device",            "LED",                  "LED_THT:LED_D5.0mm"),
+    "Yellow-LED":           ("Device",            "LED",                  "LED_THT:LED_D5.0mm"),
+    "Green-LED":            ("Device",            "LED",                  "LED_THT:LED_D5.0mm"),
+    "Blue-LED":             ("Device",            "LED",                  "LED_THT:LED_D5.0mm"),
+    "Resistor-220R":        ("Device",            "R",                    "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "Resistor-1K":          ("Device",            "R",                    "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "Resistor-10K":         ("Device",            "R",                    "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "Decoupling-Capacitor": ("Device",            "C",                    "Capacitor_SMD:C_0402_1005Metric"),
+    "ESD-Diode":            ("Device",            "D_Zener",              "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal"),
+    "__MCU__":              ("MCU_Module",        "Generic_MCU",          "Package_DIP:DIP-28_W15.24mm"),
+    "__LED__":              ("Device",            "LED",                  "LED_THT:LED_D5.0mm"),
+    "__Resistor__":         ("Device",            "R",                    "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "__Capacitor__":        ("Device",            "C",                    "Capacitor_SMD:C_0402_1005Metric"),
+    "__PowerSupply__":      ("Connector",         "USB_B",                "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    "__Motor__":            ("Motor_Control",     "L298N",                "Package_TO_SOT_THT:TO-220-15"),
+    "__Default__":          ("Device",            "Generic_Component",    "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+}
+
+
+def get_footprint(name, comp_type):
+    clean = name.replace(" ", "-")
+    if clean in FOOTPRINT_MAP: return FOOTPRINT_MAP[clean]
+    if name  in FOOTPRINT_MAP: return FOOTPRINT_MAP[name]
+    for key in FOOTPRINT_MAP:
+        if key.startswith("__"): continue
+        if key.lower() in name.lower() or name.lower() in key.lower():
+            return FOOTPRINT_MAP[key]
+    type_key = f"__{comp_type}__"
+    if type_key in FOOTPRINT_MAP: return FOOTPRINT_MAP[type_key]
+    return FOOTPRINT_MAP["__Default__"]
+
+
+def build_net_map(connections, components):
+    name_to_id  = {c["name"]: c["id"] for c in components}
+    net_map     = {}
+    pin_counter = {}
+
+    def get_pin(ref):
+        pin_counter[ref] = pin_counter.get(ref, 0) + 1
+        return pin_counter[ref]
+
+    for conn in connections:
+        from_name = conn["from"]
+        to_name   = conn["to"]
+        from_ref  = name_to_id.get(from_name, from_name)
+        to_ref    = name_to_id.get(to_name,   to_name)
+
+        net_name = f"Net-{re.sub(r'[^A-Za-z0-9_]', '_', from_name)}_to_{re.sub(r'[^A-Za-z0-9_]', '_', to_name)}"
+        if   "gnd"   in from_name.lower() or "ground" in from_name.lower(): net_name = "GND"
+        elif "gnd"   in to_name.lower()   or "ground" in to_name.lower():   net_name = "GND"
+        elif "vcc"   in from_name.lower() or "5v"     in from_name.lower() or "power" in from_name.lower(): net_name = "VCC_5V"
+        elif "3.3"   in from_name         or "3v3"    in from_name.lower(): net_name = "VCC_3V3"
+
+        if net_name not in net_map: net_map[net_name] = []
+        net_map[net_name].append((from_ref, get_pin(from_ref)))
+        net_map[net_name].append((to_ref,   get_pin(to_ref)))
+
+    return net_map
+
+
+def generate_kicad_netlist_content(data):
+    """Generates KiCad .net file content as a string."""
+    components  = data.get("components",  [])
+    connections = data.get("connections", [])
+    title       = data.get("title", "PCB_Project")
+
+    lines = [
+        "(export (version D)",
+        "  (design",
+        f"    (source {title}.sch)",
+        f"    (date \"{datetime.now().strftime('%Y-%m-%d')}\")",
+        "    (tool \"Kevin the Wizard - PCB Co-Pilot AI\"))",
+        "  (components",
+    ]
+
+    for comp in components:
+        lib, part, footprint = get_footprint(comp["name"], comp.get("type", "Default"))
+        lines += [
+            f"    (comp (ref {comp['id']})",
+            f"      (value {comp['name']})",
+            f"      (libsource (lib {lib}) (part {part}))",
+            f"      (footprint {footprint}))",
+        ]
+
+    lines += [
+        "    (comp (ref PWR_GND)",
+        "      (value GND)",
+        "      (libsource (lib power) (part GND))",
+        "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
+        "    (comp (ref PWR_VCC)",
+        "      (value VCC)",
+        "      (libsource (lib power) (part VCC))",
+        "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
+        "  )",
+        "  (nets",
+    ]
+
+    net_map = build_net_map(connections, components)
+    if "GND"    not in net_map: net_map["GND"]    = []
+    if "VCC_5V" not in net_map: net_map["VCC_5V"] = []
+    net_map["GND"].append(("PWR_GND", 1))
+    net_map["VCC_5V"].append(("PWR_VCC", 1))
+
+    for code, (net_name, nodes) in enumerate(net_map.items(), start=1):
+        lines.append(f"    (net (code {code}) (name \"{net_name}\")")
+        seen = set()
+        for ref, pin in nodes:
+            if (ref, pin) not in seen:
+                seen.add((ref, pin))
+                lines.append(f"      (node (ref {ref}) (pin {pin}))")
+        lines.append("    )")
+
+    lines += ["  )", ")"]
+    return "\n".join(lines)
+
 
 # ==============================================================
 #  HELPERS
@@ -224,18 +361,20 @@ def generate():
             all_fixes.extend(fixes)
             results = run_smart_checks(data)
 
-        # Step 3: Generate all 3 output files
-        report_txt = generate_safety_report_txt(results, data, all_fixes)
-        diagram_md = generate_mermaid_md(data)
-        bom_csv = generate_bom_csv_content(data)
+        # Step 3: Generate all output files
+        report_txt  = generate_safety_report_txt(results, data, all_fixes)
+        diagram_md  = generate_mermaid_md(data)
+        bom_csv     = generate_bom_csv_content(data)
+        kicad_net   = generate_kicad_netlist_content(data)   # ← NEW
 
-        # Step 4: Pack into ZIP
+        # Step 4: Pack into ZIP (now includes design.net)
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
         with zipfile.ZipFile(tmp.name, "w") as zf:
-            zf.writestr("output.json", json.dumps(data, indent=2))
+            zf.writestr("output.json",       json.dumps(data, indent=2))
             zf.writestr("safety_report.txt", report_txt)
-            zf.writestr("diagram.md", diagram_md)
-            zf.writestr("BOM.csv", bom_csv)
+            zf.writestr("diagram.md",        diagram_md)
+            zf.writestr("BOM.csv",           bom_csv)
+            zf.writestr("design.net",        kicad_net)       # ← NEW
 
         return send_file(tmp.name, as_attachment=True, download_name="kevin_wizard_output.zip", mimetype="application/zip")
 
@@ -249,4 +388,4 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(__import__("os").environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
