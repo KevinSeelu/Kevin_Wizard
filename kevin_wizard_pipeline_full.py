@@ -19,7 +19,7 @@ genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 # Initialize the LATEST 2026 Free Model
 # Model: Gemini 3.1 Flash-Lite (Released March 3, 2026)
 model = genai.GenerativeModel(
-    model_name="gemini-3.1-flash-lite-preview",
+    model_name="gemini-2.0-flash",
     system_instruction="""
     You are a Senior Hardware Engineer (PS1 Specialist). 
     Your job is to parse descriptions into a JSON Netlist.
@@ -191,7 +191,7 @@ def run_checks(data):
     print("\n Asking Gemini to analyse the circuit and run smart safety checks...\n")
 
     safety_model = genai.GenerativeModel(
-        model_name="gemini-3.1-flash-lite-preview",
+        model_name="gemini-2.0-flash",
         system_instruction="""
         You are a Senior Electrical Safety Engineer.
         You will be given a circuit JSON with components and connections.
@@ -325,7 +325,7 @@ def fetch_from_gemini(component_name):
     """Fallback to Gemini AI."""
     try:
         lookup_model = genai.GenerativeModel(
-            model_name="gemini-3.1-flash-lite-preview",
+            model_name="gemini-2.0-flash",
             system_instruction="""
             You are an electronics component database.
             When given a component name, return ONLY raw JSON with these exact fields:
@@ -437,7 +437,7 @@ def auto_fix(data, results):
         print(f"   Fixing: [{f['check']}]  {f['detail'][:60]}...")
 
     fix_model = genai.GenerativeModel(
-        model_name="gemini-3.1-flash-lite-preview",
+        model_name="gemini-2.0-flash",
         system_instruction="""
         You are a Senior Hardware Engineer and circuit repair specialist.
         You will be given:
