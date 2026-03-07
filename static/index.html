@@ -4,983 +4,592 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Kevin the Wizard — PCB Co-Pilot</title>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cinzel:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <style>
-  :root {
-    --brass: #c8922a;
-    --brass-light: #e8b84b;
-    --brass-dark: #8b6010;
-    --copper: #b87333;
-    --rust: #8b3a1a;
-    --parchment: #f5e6c8;
-    --parchment-dark: #d4b896;
-    --ink: #1a0f00;
-    --steam: rgba(200,180,140,0.15);
-    --leather: #3d1f00;
-    --iron: #2a2420;
-  }
+:root {
+  --brass:#c8922a;--brass-light:#e8b84b;--brass-dark:#8b6010;
+  --copper:#b87333;--rust:#8b3a1a;
+  --parchment:#f5e6c8;--parchment-dark:#d4b896;
+  --ink:#1a0f00;--iron:#1c1714;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background-color:var(--iron);
+  background-image:
+    radial-gradient(ellipse at 15% 10%,rgba(139,96,16,.18) 0%,transparent 45%),
+    radial-gradient(ellipse at 85% 90%,rgba(184,115,51,.12) 0%,transparent 45%),
+    url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c8922a' fill-opacity='0.03'%3E%3Cpath d='M40 0l2 18h-4L40 0zm0 80l2-18h-4L40 80zM0 40l18 2v-4L0 40zm80 0l-18 2v-4L80 40z'/%3E%3C/g%3E%3C/svg%3E");
+  font-family:'Special Elite',cursive;
+  color:var(--parchment);min-height:100vh;overflow-x:hidden;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* KEYFRAMES */
+@keyframes spin-slow{to{transform:rotate(360deg);}}
+@keyframes spin-rev{to{transform:rotate(-360deg);}}
+@keyframes flicker{0%,89%,91%,94%,96%,100%{opacity:1;}90%{opacity:.6;}93%{opacity:.8;}95%{opacity:.5;}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 12px var(--brass),0 0 24px rgba(200,146,42,.3);}50%{box-shadow:0 0 24px var(--brass),0 0 50px rgba(200,146,42,.55);}}
+@keyframes log-in{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+@keyframes steam-up{0%{opacity:0;transform:translateY(0) scale(1);}40%{opacity:.7;}100%{opacity:0;transform:translateY(-80px) scale(2);}}
+@keyframes header-in{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes badge-pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+@keyframes fire1{0%,100%{transform:scaleX(1) scaleY(1) translateY(0);opacity:.9;}25%{transform:scaleX(.85) scaleY(1.2) translateY(-4px);opacity:1;}50%{transform:scaleX(1.1) scaleY(.9) translateY(-2px);opacity:.8;}75%{transform:scaleX(.9) scaleY(1.15) translateY(-6px);opacity:1;}}
+@keyframes fire2{0%,100%{transform:scaleX(1) scaleY(1) translateY(0);opacity:.7;}33%{transform:scaleX(.8) scaleY(1.3) translateY(-8px);opacity:.9;}66%{transform:scaleX(1.2) scaleY(.85) translateY(-3px);opacity:.6;}}
+@keyframes fire3{0%,100%{transform:scaleX(1) scaleY(1);opacity:.5;}50%{transform:scaleX(.7) scaleY(1.5) translateY(-12px);opacity:.8;}}
+@keyframes skull-bob{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-6px) rotate(2deg);}}
+@keyframes eye-glow{0%,100%{fill:#ff4400;}50%{fill:#ffaa00;}}
+@keyframes loader-fade-in{from{opacity:0;}to{opacity:1;}}
+@keyframes loader-fade-out{from{opacity:1;}to{opacity:0;}}
+@keyframes dots{0%{content:'';}25%{content:'.';}50%{content:'..';}75%{content:'...';}100%{content:'';}}
 
-  body {
-    background-color: var(--iron);
-    background-image:
-      radial-gradient(ellipse at 20% 20%, rgba(139,96,16,0.15) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(184,115,51,0.1) 0%, transparent 50%),
-      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8922a' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    font-family: 'Special Elite', cursive;
-    color: var(--parchment);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* SKULL LOADER */
+#loaderOverlay{
+  position:fixed;inset:0;
+  background:rgba(16,10,4,.93);
+  backdrop-filter:blur(5px);
+  z-index:999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
+  animation:loader-fade-in .3s ease;
+}
+#loaderOverlay.hiding{animation:loader-fade-out .5s ease forwards;}
+#loaderOverlay.gone{display:none;}
+.skull-scene{position:relative;width:160px;height:180px;animation:skull-bob 1.8s ease-in-out infinite;}
+.fire-wrap{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:100px;height:120px;}
+.flame{position:absolute;bottom:0;left:50%;transform-origin:bottom center;border-radius:50% 50% 20% 20%;}
+.flame-1{width:70px;height:100px;margin-left:-35px;background:radial-gradient(ellipse at 50% 80%,#ff6a00,#ee0979 60%,transparent 100%);animation:fire1 .6s ease-in-out infinite;}
+.flame-2{width:50px;height:80px;margin-left:-25px;background:radial-gradient(ellipse at 50% 80%,#ffcc00,#ff6a00 50%,transparent 100%);animation:fire2 .5s ease-in-out infinite .1s;}
+.flame-3{width:30px;height:55px;margin-left:-15px;background:radial-gradient(ellipse at 50% 80%,#ffffff,#ffcc00 40%,transparent 100%);animation:fire3 .4s ease-in-out infinite .05s;}
+.skull-svg{position:relative;z-index:2;width:160px;height:160px;}
+.skull-eye{animation:eye-glow 1s ease-in-out infinite;}
+.loader-title{font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--brass-light);letter-spacing:.2em;text-align:center;text-shadow:0 0 20px rgba(200,146,42,.6);animation:flicker 3s infinite;}
+.loader-status{font-family:'IM Fell English',serif;font-style:italic;color:var(--parchment-dark);font-size:.9rem;opacity:.8;text-align:center;min-height:1.4em;}
+.loader-dots::after{content:'';animation:dots 1.5s steps(4,end) infinite;}
 
-  /* ── GEAR ANIMATIONS ── */
-  @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  @keyframes spin-reverse { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
-  @keyframes steam-rise {
-    0% { opacity: 0; transform: translateY(0) scaleX(1); }
-    50% { opacity: 0.6; transform: translateY(-30px) scaleX(1.3); }
-    100% { opacity: 0; transform: translateY(-70px) scaleX(0.8); }
-  }
-  @keyframes flicker {
-    0%,100% { opacity: 1; } 92% { opacity: 1; } 93% { opacity: 0.7; } 95% { opacity: 1; } 97% { opacity: 0.8; }
-  }
-  @keyframes needle-move {
-    0%,100% { transform: rotate(-30deg); }
-    50% { transform: rotate(30deg); }
-  }
-  @keyframes pulse-glow {
-    0%,100% { box-shadow: 0 0 10px var(--brass), 0 0 20px rgba(200,146,42,0.3); }
-    50% { box-shadow: 0 0 20px var(--brass), 0 0 40px rgba(200,146,42,0.5), 0 0 60px rgba(200,146,42,0.2); }
-  }
-  @keyframes log-appear {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
+/* HEADER */
+header{position:relative;text-align:center;border-bottom:3px solid var(--brass-dark);overflow:hidden;background:linear-gradient(180deg,rgba(30,18,5,.9) 0%,rgba(28,23,20,.7) 100%);}
+.header-top-bar{display:flex;align-items:center;justify-content:space-between;padding:.4rem 1.5rem;border-bottom:1px solid rgba(200,146,42,.15);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.2em;color:rgba(200,146,42,.4);}
+.status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4a9e4a;box-shadow:0 0 6px #4a9e4a;margin-right:.4rem;animation:pulse-glow 2s infinite;}
+.header-main{padding:2.5rem 1rem 1.2rem;position:relative;}
+.gear-left{position:absolute;top:-30px;left:-30px;font-size:220px;line-height:1;opacity:.05;animation:spin-slow 40s linear infinite;user-select:none;color:var(--brass);}
+.gear-right{position:absolute;top:0;right:-20px;font-size:160px;line-height:1;opacity:.04;animation:spin-rev 25s linear infinite;user-select:none;color:var(--copper);}
+.gear-small{position:absolute;bottom:-20px;left:30%;font-size:80px;line-height:1;opacity:.03;animation:spin-slow 15s linear infinite;user-select:none;}
+.pipe-left,.pipe-right{position:absolute;bottom:0;display:flex;flex-direction:column;align-items:center;}
+.pipe-left{left:5%;}.pipe-right{right:5%;}
+.pipe-body{width:14px;height:60px;background:linear-gradient(90deg,#4a3010,#8b6010,#4a3010);border:1px solid var(--brass-dark);border-radius:3px 3px 0 0;}
+.pipe-cap{width:22px;height:8px;background:linear-gradient(90deg,#5a4020,#c8922a,#5a4020);border:1px solid var(--brass-light);border-radius:2px;margin-bottom:2px;}
+.pipe-steam{position:absolute;top:-30px;width:20px;height:30px;background:radial-gradient(ellipse,rgba(220,200,160,.4),transparent);border-radius:50%;animation:steam-up 2.5s ease-out infinite;}
+.pipe-steam:nth-child(2){animation-delay:.8s;opacity:.6;}
+.title-lockup{position:relative;display:inline-block;animation:header-in .8s ease both;}
+.title-border{position:absolute;inset:-12px -20px;border:1px solid rgba(200,146,42,.22);border-radius:4px;pointer-events:none;}
+.title-border::before,.title-border::after{content:'⬡';position:absolute;color:var(--brass);font-size:14px;opacity:.45;}
+.title-border::before{top:-8px;left:-8px;}.title-border::after{bottom:-8px;right:-8px;}
+h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.5rem,5vw,3.2rem);font-weight:700;color:var(--brass-light);text-shadow:0 0 40px rgba(200,146,42,.6),3px 3px 0 rgba(0,0,0,.5);letter-spacing:.08em;line-height:1.1;animation:flicker 9s infinite;}
+.title-tagline{font-family:'IM Fell English',serif;font-style:italic;color:var(--parchment-dark);font-size:clamp(.8rem,2vw,1.05rem);letter-spacing:.1em;margin-top:.5rem;opacity:.75;}
+.rivet-strip{display:flex;justify-content:center;align-items:center;gap:0;padding:.7rem 0 0;}
+.rivet-strip-line{flex:1;max-width:180px;height:1px;background:linear-gradient(90deg,transparent,var(--brass-dark),transparent);}
+.rivet{width:10px;height:10px;margin:0 .75rem;background:radial-gradient(circle at 35% 35%,var(--brass-light),var(--brass-dark));border-radius:50%;box-shadow:0 0 5px rgba(200,146,42,.4);}
+.header-stats{display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap;padding:.7rem 1rem .5rem;border-top:1px solid rgba(200,146,42,.1);background:rgba(0,0,0,.2);}
+.stat-item{text-align:center;}
+.stat-val{font-family:'Cinzel',serif;font-size:.72rem;color:var(--brass-light);letter-spacing:.1em;}
+.stat-lbl{font-family:'IM Fell English',serif;font-style:italic;font-size:.62rem;color:rgba(212,184,150,.35);}
 
-  /* ── HEADER ── */
-  header {
-    position: relative;
-    text-align: center;
-    padding: 3rem 1rem 2rem;
-    border-bottom: 3px solid var(--brass-dark);
-    overflow: hidden;
-  }
+/* MAIN */
+main{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 4rem;}
 
-  header::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(139,96,16,0.2) 0%, transparent 100%);
-  }
+/* BRASS PANEL */
+.brass-panel{background:linear-gradient(145deg,#1e1510,#241a0e,#1a1008);border:2px solid var(--brass-dark);border-radius:4px;position:relative;box-shadow:0 0 0 1px rgba(200,146,42,.15),inset 0 0 40px rgba(0,0,0,.6),0 10px 40px rgba(0,0,0,.7);margin-bottom:1.5rem;}
+.brass-panel::before,.brass-panel::after{content:'';position:absolute;width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--brass),var(--brass-dark));box-shadow:0 0 4px rgba(200,146,42,.3);z-index:1;}
+.brass-panel::before{top:8px;left:10px;}.brass-panel::after{bottom:8px;right:10px;}
+.panel-label{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.3em;color:var(--brass);text-transform:uppercase;padding:.7rem 1.2rem 0;opacity:.75;}
 
-  .gear-bg {
-    position: absolute;
-    opacity: 0.06;
-    font-size: 200px;
-    line-height: 1;
-    top: -40px; left: -40px;
-    animation: spin-slow 30s linear infinite;
-    user-select: none;
-  }
-  .gear-bg-2 {
-    position: absolute;
-    opacity: 0.04;
-    font-size: 150px;
-    line-height: 1;
-    top: 20px; right: -20px;
-    animation: spin-reverse 20s linear infinite;
-    user-select: none;
-  }
+/* INPUT */
+.input-wrap{padding:1.2rem 1.4rem 1.4rem;}
+.field-label{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.2em;color:var(--brass);text-transform:uppercase;margin-bottom:.6rem;display:flex;align-items:center;gap:.6rem;}
+.field-label-line{flex:0 0 24px;height:1px;background:var(--brass-dark);}
+textarea{width:100%;background:rgba(0,0,0,.5);border:1px solid var(--brass-dark);border-radius:3px;color:var(--parchment);font-family:'Special Elite',cursive;font-size:1rem;line-height:1.65;padding:1rem 1.1rem;resize:vertical;min-height:90px;outline:none;transition:border-color .3s,box-shadow .3s;background-image:repeating-linear-gradient(transparent,transparent 27px,rgba(200,146,42,.04) 27px,rgba(200,146,42,.04) 28px);}
+textarea::placeholder{color:rgba(212,184,150,.3);font-style:italic;}
+textarea:focus{border-color:var(--brass);box-shadow:0 0 18px rgba(200,146,42,.18),inset 0 0 12px rgba(0,0,0,.3);}
+.examples{display:flex;flex-wrap:wrap;gap:.4rem;margin:.75rem 0;}
+.example-chip{background:rgba(139,96,16,.18);border:1px solid rgba(200,146,42,.22);border-radius:2px;padding:.25rem .6rem;font-size:.7rem;color:rgba(212,184,150,.55);cursor:pointer;transition:all .2s;font-family:'IM Fell English',serif;font-style:italic;}
+.example-chip:hover{background:rgba(200,146,42,.2);border-color:var(--brass);color:var(--parchment);}
+.btn-engage{width:100%;margin-top:.5rem;padding:1rem 2rem;background:linear-gradient(135deg,#6b4a08,#c8922a,#e8b84b,#c8922a,#6b4a08);background-size:300% 100%;border:2px solid var(--brass-light);border-radius:3px;color:var(--ink);font-family:'Cinzel',serif;font-size:.92rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:background-position .5s,transform .15s;animation:pulse-glow 3s ease-in-out infinite;}
+.btn-engage::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.12),transparent);pointer-events:none;}
+.btn-engage:hover{background-position:right center;transform:translateY(-2px);}
+.btn-engage:active{transform:translateY(1px);}
+.btn-engage:disabled{opacity:.45;cursor:not-allowed;animation:none;transform:none;}
 
-  .steam-puff {
-    position: absolute;
-    bottom: 10px;
-    width: 30px; height: 40px;
-    background: radial-gradient(ellipse, rgba(220,200,160,0.4), transparent);
-    border-radius: 50%;
-    animation: steam-rise 3s ease-out infinite;
-  }
-  .steam-puff:nth-child(2) { left: 15%; animation-delay: 0.8s; }
-  .steam-puff:nth-child(3) { left: 85%; animation-delay: 1.6s; }
-  .steam-puff:nth-child(4) { left: 50%; animation-delay: 2.4s; }
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1.2fr;gap:1.5rem;}
+@media(max-width:680px){.two-col{grid-template-columns:1fr;}}
 
-  .title-emblem {
-    position: relative;
-    display: inline-block;
-    margin-bottom: 0.5rem;
-  }
+/* GAUGES */
+.gauges-wrap{padding:1.2rem 1rem 1.4rem;display:flex;justify-content:space-around;align-items:flex-start;flex-wrap:wrap;gap:.5rem;}
+.gauge-item{text-align:center;flex:0 0 90px;}
+.gauge-svg-wrap{position:relative;width:90px;height:60px;overflow:hidden;}
+.gauge-arc-fill{stroke-dasharray:251;stroke-dashoffset:251;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.34,1.56,.64,1);}
+.gauge-needle-line{transform-origin:80px 80px;transform:rotate(-90deg);transition:transform 1.2s cubic-bezier(.34,1.56,.64,1);}
+.gauge-val{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--brass-light);text-shadow:0 0 10px rgba(200,146,42,.5);margin-top:.2rem;line-height:1;}
+.gauge-lbl{font-family:'IM Fell English',serif;font-style:italic;font-size:.62rem;color:rgba(212,184,150,.4);margin-top:.15rem;}
 
-  h1 {
-    font-family: 'Cinzel', serif;
-    font-size: clamp(2rem, 6vw, 4rem);
-    font-weight: 700;
-    color: var(--brass-light);
-    text-shadow: 0 0 30px rgba(200,146,42,0.5), 2px 2px 0 var(--brass-dark);
-    letter-spacing: 0.1em;
-    animation: flicker 8s infinite;
-  }
+/* LOG */
+.log-outer{padding:1rem 1.2rem 1.2rem;}
+.log-inner{background:rgba(0,0,0,.55);border:1px solid rgba(200,146,42,.14);border-radius:3px;padding:.7rem .9rem;height:210px;overflow-y:auto;font-family:'Special Elite',cursive;font-size:.78rem;line-height:1.75;}
+.log-inner::-webkit-scrollbar{width:5px;}.log-inner::-webkit-scrollbar-track{background:rgba(0,0,0,.3);}.log-inner::-webkit-scrollbar-thumb{background:var(--brass-dark);border-radius:3px;}
+.log-entry{animation:log-in .25s ease;padding:.04rem 0;}
+.log-pass{color:#6ec86e;}.log-fail{color:#e07070;}.log-warn{color:#e0c060;}.log-info{color:var(--parchment-dark);}.log-step{color:var(--brass-light);font-style:italic;}.log-fix{color:#70b8e0;}
 
-  .subtitle {
-    font-family: 'IM Fell English', serif;
-    font-style: italic;
-    color: var(--parchment-dark);
-    font-size: 1.1rem;
-    letter-spacing: 0.05em;
-    margin-top: 0.3rem;
-  }
+/* TABS */
+.tab-bar{display:flex;border-bottom:2px solid var(--brass-dark);flex-wrap:wrap;padding:0 1rem;background:rgba(0,0,0,.2);}
+.tab-btn{background:transparent;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:.7rem 1.1rem;font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(212,184,150,.35);cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:.35rem;white-space:nowrap;}
+.tab-btn:hover{color:rgba(212,184,150,.65);}
+.tab-btn.active{color:var(--brass-light);border-bottom-color:var(--brass-light);text-shadow:0 0 12px rgba(200,146,42,.45);}
+.tab-icon{font-size:.9rem;}
+.fail-badge{display:none;background:rgba(158,58,58,.5);color:#e07070;border:1px solid #9e3a3a;border-radius:2px;padding:0 5px;font-size:.58rem;animation:badge-pop .4s cubic-bezier(.34,1.56,.64,1) both;}
+.tab-content{display:none;padding:1.4rem;}
+.tab-content.active{display:block;}
 
-  .rivet-row {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1.2rem;
-  }
-  .rivet {
-    width: 12px; height: 12px;
-    background: radial-gradient(circle at 35% 35%, var(--brass-light), var(--brass-dark));
-    border-radius: 50%;
-    box-shadow: 0 0 6px rgba(200,146,42,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
-  }
+/* SAFETY */
+.safety-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.7rem;}
+.safety-item{background:rgba(0,0,0,.3);border-left:3px solid var(--brass-dark);padding:.6rem .85rem;border-radius:0 3px 3px 0;transition:background .2s;}
+.safety-item:hover{background:rgba(0,0,0,.45);}
+.safety-item.pass{border-left-color:#3a8e3a;}.safety-item.fail{border-left-color:#9e3a3a;}.safety-item.warn{border-left-color:#9e8a2a;}.safety-item.skip{border-left-color:#4a4a4a;}
+.safety-badge{display:inline-block;font-size:.57rem;font-family:'Cinzel',serif;letter-spacing:.12em;padding:.1rem .4rem;border-radius:2px;margin-bottom:.25rem;}
+.pass .safety-badge{background:rgba(58,142,58,.2);color:#7ec87e;border:1px solid #3a8e3a;}
+.fail .safety-badge{background:rgba(158,58,58,.2);color:#e07070;border:1px solid #9e3a3a;}
+.warn .safety-badge{background:rgba(158,138,42,.2);color:#e0c070;border:1px solid #9e8a2a;}
+.skip .safety-badge{background:rgba(74,74,74,.2);color:#aaa;border:1px solid #4a4a4a;}
+.safety-name{font-size:.8rem;color:var(--parchment);margin-bottom:.18rem;}
+.safety-detail{font-size:.7rem;color:var(--parchment-dark);opacity:.72;font-family:'IM Fell English',serif;font-style:italic;line-height:1.4;}
 
-  /* ── MAIN LAYOUT ── */
-  main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
+/* BOM */
+.bom-table-wrap{overflow-x:auto;}
+.bom-table{width:100%;border-collapse:collapse;font-size:.77rem;}
+.bom-table th{text-align:left;padding:.48rem .7rem;border-bottom:1px solid var(--brass-dark);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.12em;color:var(--brass);text-transform:uppercase;white-space:nowrap;}
+.bom-table td{padding:.4rem .7rem;border-bottom:1px solid rgba(200,146,42,.07);color:var(--parchment-dark);}
+.bom-table tr:nth-child(even) td{background:rgba(0,0,0,.18);}
+.bom-table tr.total-row td{color:var(--brass-light);font-weight:bold;border-top:1px solid var(--brass-dark);}
+.bom-link{color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass-dark);}
+.bom-link:hover{color:var(--brass-light);}
 
-  /* ── BRASS PANEL ── */
-  .brass-panel {
-    background: linear-gradient(145deg, #1e1510, #2a1f10, #1a1008);
-    border: 2px solid var(--brass-dark);
-    border-radius: 4px;
-    position: relative;
-    box-shadow: 0 0 0 1px rgba(200,146,42,0.2), inset 0 0 30px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.6);
-  }
+/* DIAGRAM */
+.diagram-inner{background:rgba(0,0,0,.4);border:1px solid rgba(200,146,42,.17);border-radius:3px;padding:1.5rem;min-height:200px;overflow-x:auto;}
+.diagram-inner .mermaid{filter:sepia(.35) hue-rotate(12deg) brightness(1.1);}
+.placeholder-msg{text-align:center;color:rgba(212,184,150,.28);font-family:'IM Fell English',serif;font-style:italic;font-size:.95rem;padding:3rem 1rem;}
 
-  .brass-panel::before, .brass-panel::after {
-    content: '✦';
-    position: absolute;
-    color: var(--brass);
-    font-size: 10px;
-    opacity: 0.6;
-  }
-  .brass-panel::before { top: 6px; left: 10px; }
-  .brass-panel::after { bottom: 6px; right: 10px; }
+/* DOWNLOAD */
+.download-ready{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.2rem;}
+.download-title{font-family:'Cinzel',serif;font-size:1rem;color:var(--brass-light);margin-bottom:.55rem;text-shadow:0 0 12px rgba(200,146,42,.4);}
+.file-tags{display:flex;flex-wrap:wrap;gap:.4rem;}
+.file-tag{background:rgba(139,96,16,.2);border:1px solid rgba(200,146,42,.32);border-radius:2px;padding:.25rem .65rem;font-size:.7rem;color:var(--parchment-dark);}
+.btn-download{padding:.8rem 2rem;background:linear-gradient(135deg,var(--rust),#d04a1a,var(--rust));background-size:200%;border:2px solid #e06030;border-radius:3px;color:var(--parchment);font-family:'Cinzel',serif;font-size:.8rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block;transition:all .3s;}
+.btn-download:hover{background-position:right;box-shadow:0 0 24px rgba(200,80,30,.45);transform:translateY(-2px);}
 
-  .panel-label {
-    font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
-    letter-spacing: 0.3em;
-    color: var(--brass);
-    text-transform: uppercase;
-    padding: 0.6rem 1rem 0;
-    opacity: 0.8;
-  }
+/* FOOTER */
+footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13);font-family:'IM Fell English',serif;font-style:italic;font-size:.76rem;color:rgba(212,184,150,.28);}
 
-  /* ── INPUT SECTION ── */
-  .input-section {
-    margin-bottom: 1.5rem;
-  }
-
-  .input-section .brass-panel {
-    padding: 1.5rem;
-  }
-
-  .field-label {
-    font-family: 'Cinzel', serif;
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
-    color: var(--brass);
-    text-transform: uppercase;
-    margin-bottom: 0.6rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .field-label::before {
-    content: '';
-    display: inline-block;
-    width: 20px; height: 1px;
-    background: var(--brass-dark);
-  }
-
-  textarea {
-    width: 100%;
-    background: rgba(0,0,0,0.4);
-    border: 1px solid var(--brass-dark);
-    border-radius: 2px;
-    color: var(--parchment);
-    font-family: 'Special Elite', cursive;
-    font-size: 1rem;
-    padding: 1rem;
-    resize: vertical;
-    min-height: 100px;
-    outline: none;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    line-height: 1.6;
-  }
-  textarea::placeholder { color: rgba(212,184,150,0.35); font-style: italic; }
-  textarea:focus {
-    border-color: var(--brass);
-    box-shadow: 0 0 15px rgba(200,146,42,0.2), inset 0 0 10px rgba(0,0,0,0.3);
-  }
-
-  /* ── EXAMPLE PROMPTS ── */
-  .examples {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.8rem;
-  }
-  .example-chip {
-    background: rgba(139,96,16,0.2);
-    border: 1px solid rgba(200,146,42,0.3);
-    border-radius: 2px;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.75rem;
-    color: var(--parchment-dark);
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'IM Fell English', serif;
-    font-style: italic;
-  }
-  .example-chip:hover {
-    background: rgba(200,146,42,0.25);
-    border-color: var(--brass);
-    color: var(--parchment);
-  }
-
-  /* ── ENGAGE BUTTON ── */
-  .btn-engage {
-    width: 100%;
-    margin-top: 1rem;
-    padding: 1rem 2rem;
-    background: linear-gradient(135deg, #8b6010, #c8922a, #8b6010);
-    background-size: 200% 100%;
-    border: 2px solid var(--brass-light);
-    border-radius: 3px;
-    color: var(--ink);
-    font-family: 'Cinzel', serif;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s;
-    animation: pulse-glow 3s ease-in-out infinite;
-  }
-  .btn-engage:hover {
-    background-position: right center;
-    transform: translateY(-1px);
-    box-shadow: 0 0 30px rgba(200,146,42,0.5);
-  }
-  .btn-engage:active { transform: translateY(1px); }
-  .btn-engage:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    animation: none;
-    transform: none;
-  }
-  .btn-engage .btn-icon { margin-right: 0.5rem; }
-
-  /* ── TWO COLUMN ── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
-
-  /* ── GAUGE / METER ── */
-  .gauge-panel {
-    padding: 1.2rem;
-    text-align: center;
-  }
-  .gauge-wrap {
-    position: relative;
-    width: 120px; height: 70px;
-    margin: 0.5rem auto;
-    overflow: hidden;
-  }
-  .gauge-arc {
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    border: 8px solid transparent;
-    border-top-color: var(--brass-dark);
-    border-left-color: var(--brass-dark);
-    border-right-color: var(--brass-dark);
-    position: absolute;
-    top: 0; left: 0;
-    box-sizing: border-box;
-  }
-  .gauge-needle {
-    position: absolute;
-    bottom: 0; left: 50%;
-    width: 2px; height: 55px;
-    background: linear-gradient(var(--rust), var(--brass-light));
-    transform-origin: bottom center;
-    transform: rotate(-30deg);
-    transition: transform 1s ease;
-    margin-left: -1px;
-  }
-  .gauge-label {
-    font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    color: var(--brass);
-    margin-top: 0.3rem;
-  }
-  .gauge-value {
-    font-family: 'Special Elite', cursive;
-    font-size: 1.4rem;
-    color: var(--brass-light);
-    text-shadow: 0 0 10px rgba(200,146,42,0.5);
-  }
-
-  /* ── PIPELINE LOG ── */
-  .log-panel { padding: 1.2rem; min-height: 180px; }
-  .log-inner {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(200,146,42,0.2);
-    border-radius: 2px;
-    padding: 0.8rem;
-    height: 200px;
-    overflow-y: auto;
-    font-family: 'Special Elite', cursive;
-    font-size: 0.82rem;
-    line-height: 1.7;
-  }
-  .log-inner::-webkit-scrollbar { width: 6px; }
-  .log-inner::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-  .log-inner::-webkit-scrollbar-thumb { background: var(--brass-dark); border-radius: 3px; }
-
-  .log-entry {
-    animation: log-appear 0.3s ease;
-    padding: 0.1rem 0;
-  }
-  .log-pass { color: #7ec87e; }
-  .log-fail { color: #e07070; }
-  .log-warn { color: #e0c070; }
-  .log-info { color: var(--parchment-dark); }
-  .log-step { color: var(--brass-light); font-style: italic; }
-  .log-fix  { color: #70b8e0; }
-
-  /* ── SAFETY RESULTS ── */
-  .safety-panel { padding: 1.5rem; margin-bottom: 1.5rem; }
-  .safety-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.8rem;
-    margin-top: 0.8rem;
-  }
-  .safety-item {
-    background: rgba(0,0,0,0.3);
-    border-left: 3px solid var(--brass-dark);
-    padding: 0.7rem 0.9rem;
-    border-radius: 0 2px 2px 0;
-    transition: border-color 0.3s;
-  }
-  .safety-item.pass { border-left-color: #4a9e4a; }
-  .safety-item.fail { border-left-color: #9e3a3a; }
-  .safety-item.warn { border-left-color: #9e8a2a; }
-  .safety-item.skip { border-left-color: #5a5a5a; }
-
-  .safety-badge {
-    display: inline-block;
-    font-size: 0.6rem;
-    font-family: 'Cinzel', serif;
-    letter-spacing: 0.15em;
-    padding: 0.15rem 0.5rem;
-    border-radius: 2px;
-    margin-bottom: 0.3rem;
-  }
-  .pass .safety-badge { background: rgba(74,158,74,0.25); color: #7ec87e; border: 1px solid #4a9e4a; }
-  .fail .safety-badge { background: rgba(158,58,58,0.25); color: #e07070; border: 1px solid #9e3a3a; }
-  .warn .safety-badge { background: rgba(158,138,42,0.25); color: #e0c070; border: 1px solid #9e8a2a; }
-  .skip .safety-badge { background: rgba(90,90,90,0.25); color: #aaa; border: 1px solid #5a5a5a; }
-
-  .safety-name {
-    font-size: 0.85rem;
-    color: var(--parchment);
-    margin-bottom: 0.2rem;
-  }
-  .safety-detail {
-    font-size: 0.75rem;
-    color: var(--parchment-dark);
-    opacity: 0.8;
-    font-family: 'IM Fell English', serif;
-    font-style: italic;
-    line-height: 1.4;
-  }
-
-  /* ── DIAGRAM PANEL ── */
-  .diagram-panel { padding: 1.5rem; margin-bottom: 1.5rem; }
-  .diagram-inner {
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(200,146,42,0.2);
-    border-radius: 2px;
-    padding: 1.5rem;
-    min-height: 200px;
-    overflow-x: auto;
-    margin-top: 0.8rem;
-  }
-  .diagram-inner .mermaid {
-    filter: sepia(0.4) hue-rotate(15deg) brightness(1.1);
-  }
-  .diagram-placeholder {
-    text-align: center;
-    color: rgba(212,184,150,0.3);
-    font-family: 'IM Fell English', serif;
-    font-style: italic;
-    font-size: 1rem;
-    padding: 3rem 1rem;
-  }
-
-  /* ── DOWNLOAD ── */
-  .download-panel {
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    display: none;
-  }
-  .download-panel.visible { display: block; }
-
-  .download-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-top: 0.8rem;
-  }
-  .file-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  .file-tag {
-    background: rgba(139,96,16,0.2);
-    border: 1px solid rgba(200,146,42,0.4);
-    border-radius: 2px;
-    padding: 0.3rem 0.8rem;
-    font-size: 0.75rem;
-    color: var(--parchment-dark);
-    font-family: 'Special Elite', cursive;
-  }
-
-  .btn-download {
-    padding: 0.8rem 2rem;
-    background: linear-gradient(135deg, var(--rust), #c8401a, var(--rust));
-    background-size: 200%;
-    border: 2px solid #e06030;
-    border-radius: 3px;
-    color: var(--parchment);
-    font-family: 'Cinzel', serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.3s;
-  }
-  .btn-download:hover {
-    background-position: right;
-    box-shadow: 0 0 20px rgba(200,80,30,0.4);
-    transform: translateY(-1px);
-  }
-
-  /* ── DIVIDER ── */
-  .ornate-divider {
-    text-align: center;
-    margin: 1.5rem 0;
-    color: var(--brass-dark);
-    font-size: 1.2rem;
-    letter-spacing: 0.5rem;
-    opacity: 0.6;
-  }
-
-  /* ── FOOTER ── */
-  footer {
-    text-align: center;
-    padding: 1.5rem;
-    border-top: 1px solid rgba(200,146,42,0.2);
-    font-family: 'IM Fell English', serif;
-    font-style: italic;
-    font-size: 0.8rem;
-    color: rgba(212,184,150,0.4);
-  }
-
-  /* ── SPINNER ── */
-  .spinner {
-    display: inline-block;
-    width: 16px; height: 16px;
-    border: 2px solid rgba(26,15,0,0.3);
-    border-top-color: var(--ink);
-    border-radius: 50%;
-    animation: spin-slow 0.8s linear infinite;
-    vertical-align: middle;
-    margin-right: 0.4rem;
-  }
-
-  /* ── TABS ── */
-  .tabs-panel { margin-bottom: 1.5rem; }
-  .tab-bar {
-    display: flex;
-    border-bottom: 2px solid var(--brass-dark);
-    margin-bottom: 0;
-    flex-wrap: wrap;
-  }
-  .tab-btn {
-    background: transparent;
-    border: none;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px;
-    padding: 0.75rem 1.4rem;
-    font-family: 'Cinzel', serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(212,184,150,0.45);
-    cursor: pointer;
-    transition: all 0.25s;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-  .tab-btn:hover { color: var(--parchment-dark); }
-  .tab-btn.active {
-    color: var(--brass-light);
-    border-bottom-color: var(--brass-light);
-    text-shadow: 0 0 12px rgba(200,146,42,0.4);
-  }
-  .tab-icon { font-size: 1rem; }
-  .tab-content { display: none; padding: 1.5rem; }
-  .tab-content.active { display: block; }
-
-  /* ── HIDDEN ── */
-  .hidden { display: none !important; }
+/* SPINNER */
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(26,15,0,.3);border-top-color:var(--ink);border-radius:50%;animation:spin-slow .7s linear infinite;vertical-align:middle;margin-right:.4rem;}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="gear-bg">⚙</div>
-  <div class="gear-bg-2">⚙</div>
-  <div class="steam-puff"></div>
-  <div class="steam-puff"></div>
-  <div class="steam-puff"></div>
-
-  <div class="title-emblem">
-    <h1>⚙ KEVIN THE WIZARD ⚙</h1>
-    <p class="subtitle">Autonomous PCB Co-Pilot &mdash; Aetheric Circuit Forge</p>
+<!-- SKULL FIRE LOADER -->
+<div id="loaderOverlay" class="gone">
+  <div class="skull-scene">
+    <div class="fire-wrap">
+      <div class="flame flame-1"></div>
+      <div class="flame flame-2"></div>
+      <div class="flame flame-3"></div>
+    </div>
+    <svg class="skull-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+      <!-- Knife -->
+      <rect x="73" y="2" width="10" height="38" rx="2" fill="#8b8b8b" stroke="#555" stroke-width="1"/>
+      <polygon points="73,40 83,40 78,55" fill="#b0b0b0" stroke="#666" stroke-width="1"/>
+      <rect x="68" y="34" width="20" height="6" rx="2" fill="#6b4a08" stroke="#8b6010" stroke-width="1"/>
+      <path d="M76 52 Q77 60 76 68" stroke="#cc0000" stroke-width="2" fill="none" opacity=".8"/>
+      <ellipse cx="76" cy="70" rx="3" ry="4" fill="#cc0000" opacity=".7"/>
+      <!-- Skull -->
+      <ellipse cx="80" cy="88" rx="46" ry="42" fill="#d4c9a8" stroke="#a09070" stroke-width="2"/>
+      <ellipse cx="80" cy="82" rx="42" ry="36" fill="#e8dcc0"/>
+      <ellipse cx="80" cy="68" rx="38" ry="28" fill="#ecdfc5"/>
+      <ellipse cx="52" cy="98" rx="12" ry="8" fill="#d4c9a8" opacity=".6"/>
+      <ellipse cx="108" cy="98" rx="12" ry="8" fill="#d4c9a8" opacity=".6"/>
+      <!-- Eye sockets -->
+      <ellipse cx="60" cy="88" rx="16" ry="13" fill="#1a1008"/>
+      <ellipse cx="100" cy="88" rx="16" ry="13" fill="#1a1008"/>
+      <ellipse class="skull-eye" cx="60" cy="88" rx="10" ry="8"/>
+      <ellipse class="skull-eye" cx="100" cy="88" rx="10" ry="8" style="animation-delay:.3s"/>
+      <ellipse cx="60" cy="88" rx="4" ry="4" fill="#1a0000" opacity=".8"/>
+      <ellipse cx="100" cy="88" rx="4" ry="4" fill="#1a0000" opacity=".8"/>
+      <!-- Nose -->
+      <path d="M74 103 Q80 98 86 103 Q83 112 80 113 Q77 112 74 103Z" fill="#1a1008"/>
+      <!-- Jaw -->
+      <rect x="48" y="118" width="64" height="18" rx="4" fill="#c8bda0" stroke="#a09070" stroke-width="1.5"/>
+      <line x1="60" y1="118" x2="60" y2="136" stroke="#a09070" stroke-width="1.5"/>
+      <line x1="72" y1="118" x2="72" y2="136" stroke="#a09070" stroke-width="1.5"/>
+      <line x1="80" y1="118" x2="80" y2="136" stroke="#a09070" stroke-width="1.5"/>
+      <line x1="88" y1="118" x2="88" y2="136" stroke="#a09070" stroke-width="1.5"/>
+      <line x1="100" y1="118" x2="100" y2="136" stroke="#a09070" stroke-width="1.5"/>
+      <!-- Cracks -->
+      <path d="M80 62 L76 72 L82 78 L79 86" stroke="#a09070" stroke-width="1" fill="none" opacity=".4"/>
+    </svg>
   </div>
-  <div class="rivet-row">
-    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
-    <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
-    <div class="rivet"></div>
+  <div class="loader-title">⚙ FORGING YOUR CIRCUIT ⚙</div>
+  <div class="loader-status" id="loaderStatus">Igniting the aetheric boiler<span class="loader-dots"></span></div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top-bar">
+    <span>PCB CO-PILOT v2.6 — AETHERIC FORGE SYSTEM</span>
+    <span><span class="status-dot"></span>SYSTEMS NOMINAL</span>
+    <span>HACKATHON 2026</span>
+  </div>
+  <div class="header-main">
+    <div class="gear-left">⚙</div>
+    <div class="gear-right">⚙</div>
+    <div class="gear-small">⚙</div>
+    <div class="pipe-left">
+      <div class="pipe-steam"></div>
+      <div class="pipe-steam"></div>
+      <div class="pipe-cap"></div>
+      <div class="pipe-body"></div>
+    </div>
+    <div class="pipe-right">
+      <div class="pipe-steam"></div>
+      <div class="pipe-cap"></div>
+      <div class="pipe-body"></div>
+    </div>
+    <div class="title-lockup">
+      <div class="title-border"></div>
+      <h1>⚙ Kevin the Wizard ⚙</h1>
+      <p class="title-tagline">Autonomous PCB Co-Pilot &mdash; Aetheric Circuit Forge</p>
+    </div>
+    <div class="rivet-strip">
+      <div class="rivet-strip-line"></div>
+      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+      <div class="rivet"></div><div class="rivet"></div>
+      <div class="rivet-strip-line"></div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-item"><div class="stat-val">GEMINI 3.1</div><div class="stat-lbl">Neural Engine</div></div>
+    <div class="stat-item"><div class="stat-val">4-PASS</div><div class="stat-lbl">Auto-Fix Loop</div></div>
+    <div class="stat-item"><div class="stat-val">ZIP</div><div class="stat-lbl">Output Package</div></div>
+    <div class="stat-item"><div class="stat-val">LIVE</div><div class="stat-lbl">DigiKey BOM</div></div>
+    <div class="stat-item"><div class="stat-val">MERMAID</div><div class="stat-lbl">Schematic</div></div>
   </div>
 </header>
 
 <main>
 
   <!-- INPUT -->
-  <div class="input-section">
-    <div class="brass-panel">
-      <div class="panel-label">✦ Transmission Chamber</div>
-      <div style="padding:1rem 1rem 0">
-        <div class="field-label">Describe your circuit apparatus</div>
-        <textarea id="circuitInput" rows="3"
-          placeholder="e.g. ESP32 robot with LiPo battery and two motor drivers..."></textarea>
-        <div class="examples">
-          <span class="example-chip" onclick="setPrompt(this)">Traffic light with Arduino Uno</span>
-          <span class="example-chip" onclick="setPrompt(this)">LiPo-powered ESP32 with dual motor drivers</span>
-          <span class="example-chip" onclick="setPrompt(this)">USB-C charging circuit with TP4056</span>
-          <span class="example-chip" onclick="setPrompt(this)">Raspberry Pi sensor node with I2C display</span>
-        </div>
-        <button class="btn-engage" id="runBtn" onclick="runPipeline()">
-          <span class="btn-icon">⚙</span> ENGAGE THE MECHANISMS
-        </button>
+  <div class="brass-panel">
+    <div class="panel-label">✦ Transmission Chamber</div>
+    <div class="input-wrap">
+      <div class="field-label">
+        <span class="field-label-line"></span>
+        Inscribe your circuit apparatus below
       </div>
+      <textarea id="circuitInput" rows="3" placeholder="e.g. ESP32 robot with LiPo battery and two motor drivers..."></textarea>
+      <div class="examples">
+        <span class="example-chip" onclick="setPrompt(this)">Traffic light with Arduino Uno</span>
+        <span class="example-chip" onclick="setPrompt(this)">LiPo-powered ESP32 with dual motor drivers</span>
+        <span class="example-chip" onclick="setPrompt(this)">USB-C charging circuit with TP4056</span>
+        <span class="example-chip" onclick="setPrompt(this)">Raspberry Pi sensor node with I2C display</span>
+      </div>
+      <button class="btn-engage" id="runBtn" onclick="runPipeline()">
+        ⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙
+      </button>
     </div>
   </div>
 
   <!-- GAUGES + LOG -->
   <div class="two-col">
-    <div class="brass-panel gauge-panel">
+    <div class="brass-panel">
       <div class="panel-label">✦ Pressure Gauges</div>
-      <div style="display:flex;justify-content:space-around;margin-top:0.8rem;flex-wrap:wrap;gap:1rem;">
-
-        <div style="text-align:center">
-          <div class="gauge-wrap">
-            <div class="gauge-arc"></div>
-            <div class="gauge-needle" id="needle1"></div>
+      <div class="gauges-wrap">
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg viewBox="0 0 160 90" width="90" height="60">
+              <path d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" stroke="rgba(200,146,42,.1)"/>
+              <path id="gArcPass" d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" class="gauge-arc-fill" stroke="#4a9e4a"/>
+              <line id="gNeedlePass" x1="80" y1="80" x2="80" y2="28" stroke="#4a9e4a" stroke-width="2.5" stroke-linecap="round" class="gauge-needle-line"/>
+              <circle cx="80" cy="80" r="5" fill="var(--brass)" stroke="var(--brass-dark)" stroke-width="1.5"/>
+            </svg>
           </div>
-          <div class="gauge-value" id="passCount">—</div>
-          <div class="gauge-label">Checks Passed</div>
+          <div class="gauge-val" id="passCount">—</div>
+          <div class="gauge-lbl">Checks Passed</div>
         </div>
-
-        <div style="text-align:center">
-          <div class="gauge-wrap">
-            <div class="gauge-arc" style="border-top-color:var(--rust);border-left-color:var(--rust);border-right-color:var(--rust)"></div>
-            <div class="gauge-needle" id="needle2" style="background:linear-gradient(var(--rust),#e07070)"></div>
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg viewBox="0 0 160 90" width="90" height="60">
+              <path d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" stroke="rgba(200,146,42,.1)"/>
+              <path id="gArcFail" d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" class="gauge-arc-fill" stroke="#9e3a3a"/>
+              <line id="gNeedleFail" x1="80" y1="80" x2="80" y2="28" stroke="#e07070" stroke-width="2.5" stroke-linecap="round" class="gauge-needle-line"/>
+              <circle cx="80" cy="80" r="5" fill="var(--brass)" stroke="var(--brass-dark)" stroke-width="1.5"/>
+            </svg>
           </div>
-          <div class="gauge-value" id="failCount" style="color:#e07070">—</div>
-          <div class="gauge-label">Issues Found</div>
+          <div class="gauge-val" id="failCount" style="color:#e07070">—</div>
+          <div class="gauge-lbl">Issues Found</div>
         </div>
-
-        <div style="text-align:center">
-          <div class="gauge-wrap">
-            <div class="gauge-arc" style="border-top-color:#7070a0;border-left-color:#7070a0;border-right-color:#7070a0"></div>
-            <div class="gauge-needle" id="needle3" style="background:linear-gradient(#5a5a8a,#a0a0e0)"></div>
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg viewBox="0 0 160 90" width="90" height="60">
+              <path d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" stroke="rgba(200,146,42,.1)"/>
+              <path id="gArcComp" d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" class="gauge-arc-fill" stroke="#7070a0"/>
+              <line id="gNeedleComp" x1="80" y1="80" x2="80" y2="28" stroke="#a0a0e0" stroke-width="2.5" stroke-linecap="round" class="gauge-needle-line"/>
+              <circle cx="80" cy="80" r="5" fill="var(--brass)" stroke="var(--brass-dark)" stroke-width="1.5"/>
+            </svg>
           </div>
-          <div class="gauge-value" id="compCount" style="color:#a0a0e0">—</div>
-          <div class="gauge-label">Components</div>
+          <div class="gauge-val" id="compCount" style="color:#a0a0e0">—</div>
+          <div class="gauge-lbl">Components</div>
         </div>
-
       </div>
     </div>
 
-    <div class="brass-panel log-panel">
+    <div class="brass-panel">
       <div class="panel-label">✦ Aetheric Transmission Log</div>
-      <div class="log-inner" id="logOutput">
-        <div class="log-entry log-info" style="opacity:0.4;font-style:italic">
-          Awaiting your circuit description, traveller...
+      <div class="log-outer">
+        <div class="log-inner" id="logOutput">
+          <div class="log-entry log-info" style="opacity:.3;font-style:italic">Awaiting your circuit description, traveller...</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- TABBED OUTPUT PANEL -->
-  <div class="brass-panel tabs-panel" id="outputTabs">
+  <!-- TABBED OUTPUT -->
+  <div class="brass-panel">
     <div class="panel-label">✦ Design Output Chamber</div>
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('diagram')">
-        <span class="tab-icon">🗺</span> Schematic
-      </button>
-      <button class="tab-btn" onclick="switchTab('safety')">
-        <span class="tab-icon">⚠</span> Safety Audit
-        <span id="safetyBadgeTab" style="display:none;margin-left:0.3rem;background:rgba(158,58,58,0.4);color:#e07070;border:1px solid #9e3a3a;border-radius:2px;padding:0 5px;font-size:0.6rem"></span>
-      </button>
-      <button class="tab-btn" onclick="switchTab('bom')">
-        <span class="tab-icon">📋</span> Bill of Materials
-      </button>
-      <button class="tab-btn" onclick="switchTab('download')">
-        <span class="tab-icon">⬇</span> Download
-      </button>
+      <button class="tab-btn active" onclick="switchTab('diagram')"><span class="tab-icon">🗺</span> Schematic</button>
+      <button class="tab-btn" onclick="switchTab('safety')"><span class="tab-icon">⚠</span> Safety Audit <span class="fail-badge" id="failBadge"></span></button>
+      <button class="tab-btn" onclick="switchTab('bom')"><span class="tab-icon">📋</span> Bill of Materials</button>
+      <button class="tab-btn" onclick="switchTab('download')"><span class="tab-icon">⬇</span> Download</button>
     </div>
 
-    <!-- DIAGRAM TAB -->
     <div class="tab-content active" id="tab-diagram">
       <div class="diagram-inner" id="diagramOutput">
-        <div class="diagram-placeholder">⚙ &nbsp; Circuit diagram shall appear here upon activation &nbsp; ⚙</div>
+        <div class="placeholder-msg">⚙ &nbsp; Circuit schematic shall manifest here upon activation &nbsp; ⚙</div>
       </div>
     </div>
 
-    <!-- SAFETY TAB -->
     <div class="tab-content" id="tab-safety">
       <div class="safety-grid" id="safetyGrid">
-        <div style="color:rgba(212,184,150,0.3);font-family:'IM Fell English',serif;font-style:italic;padding:3rem;text-align:center">
-          Run the pipeline to see safety results...
-        </div>
+        <div class="placeholder-msg">Run the pipeline to see safety audit results...</div>
       </div>
     </div>
 
-    <!-- BOM TAB -->
     <div class="tab-content" id="tab-bom">
-      <div id="bomOutput" style="overflow-x:auto">
-        <div style="color:rgba(212,184,150,0.3);font-family:'IM Fell English',serif;font-style:italic;padding:3rem;text-align:center">
-          Run the pipeline to see the Bill of Materials...
-        </div>
+      <div class="bom-table-wrap" id="bomOutput">
+        <div class="placeholder-msg">Run the pipeline to generate the Bill of Materials...</div>
       </div>
     </div>
 
-    <!-- DOWNLOAD TAB -->
     <div class="tab-content" id="tab-download">
-      <div id="downloadPanel" style="display:none">
-        <div style="font-family:'Cinzel',serif;font-size:1rem;color:var(--brass-light);margin-bottom:0.8rem">
-          KEVIN_WIZARD_OUTPUT.ZIP
+      <div id="downloadReady" style="display:none">
+        <div class="download-ready">
+          <div>
+            <div class="download-title">⚙ KEVIN_WIZARD_OUTPUT.ZIP</div>
+            <div class="file-tags">
+              <span class="file-tag">output.json</span>
+              <span class="file-tag">safety_report.txt</span>
+              <span class="file-tag">diagram.md</span>
+              <span class="file-tag">BOM.csv</span>
+            </div>
+          </div>
+          <a class="btn-download" id="downloadBtn" href="#">⬇ RETRIEVE DESIGN PACKAGE</a>
         </div>
-        <div class="file-tags" style="margin-bottom:1.2rem">
-          <span class="file-tag">output.json</span>
-          <span class="file-tag">safety_report.txt</span>
-          <span class="file-tag">diagram.md</span>
-          <span class="file-tag">BOM.csv</span>
-        </div>
-        <a class="btn-download" id="downloadBtn" href="#">⬇ RETRIEVE DESIGN PACKAGE</a>
       </div>
-      <div id="downloadPlaceholder" style="color:rgba(212,184,150,0.3);font-family:'IM Fell English',serif;font-style:italic;padding:3rem;text-align:center">
-        Run the pipeline to generate your download package...
-      </div>
+      <div id="downloadPlaceholder" class="placeholder-msg">Run the pipeline to generate your download package...</div>
     </div>
   </div>
 
 </main>
 
-<footer>
-  Forged in brass & aether &mdash; Kevin the Wizard's Autonomous PCB Co-Pilot &mdash; Hackathon 2026
-</footer>
+<footer>Forged in brass &amp; aether &mdash; Kevin the Wizard's Autonomous PCB Co-Pilot &mdash; Hackathon 2026</footer>
 
 <script>
-  mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: {
-    primaryColor: '#3d2a0a', primaryTextColor: '#e8b84b',
-    primaryBorderColor: '#c8922a', lineColor: '#c8922a',
-    secondaryColor: '#2a1f10', background: '#1a1008',
-    mainBkg: '#2a1f10', nodeBorder: '#c8922a',
-    clusterBkg: '#1a1008', titleColor: '#e8b84b',
-    edgeLabelBackground: '#1a1008', fontSize: '14px'
-  }});
+mermaid.initialize({startOnLoad:false,theme:'dark',themeVariables:{
+  primaryColor:'#3d2a0a',primaryTextColor:'#e8b84b',primaryBorderColor:'#c8922a',
+  lineColor:'#c8922a',secondaryColor:'#2a1f10',background:'#1a1008',
+  mainBkg:'#2a1f10',nodeBorder:'#c8922a',clusterBkg:'#1a1008',
+  titleColor:'#e8b84b',edgeLabelBackground:'#1a1008',fontSize:'14px'
+}});
 
-  function setPrompt(el) {
-    document.getElementById('circuitInput').value = el.textContent;
+const LOADER_MSGS=['Igniting the aetheric boiler','Transmitting to Gemini neural engine','Parsing circuit topology','Running electrical safety audit','Engaging auto-fix mechanisms','Enriching component database','Forging Bill of Materials','Packaging design artifacts'];
+let loaderMsgIdx=0,loaderInterval;
+
+function showLoader(){
+  const el=document.getElementById('loaderOverlay');
+  el.classList.remove('gone','hiding');
+  loaderMsgIdx=0;
+  document.getElementById('loaderStatus').innerHTML=LOADER_MSGS[0]+'<span class="loader-dots"></span>';
+  loaderInterval=setInterval(()=>{
+    loaderMsgIdx=(loaderMsgIdx+1)%LOADER_MSGS.length;
+    document.getElementById('loaderStatus').innerHTML=LOADER_MSGS[loaderMsgIdx]+'<span class="loader-dots"></span>';
+  },2800);
+}
+function hideLoader(){
+  clearInterval(loaderInterval);
+  const el=document.getElementById('loaderOverlay');
+  el.classList.add('hiding');
+  setTimeout(()=>el.classList.add('gone'),500);
+}
+
+function setPrompt(el){document.getElementById('circuitInput').value=el.textContent;}
+
+function log(msg,type='info'){
+  const box=document.getElementById('logOutput');
+  const d=document.createElement('div');
+  d.className=`log-entry log-${type}`;
+  const t=new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  d.textContent=`[${t}] ${msg}`;
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+}
+function clearLog(){document.getElementById('logOutput').innerHTML='';}
+
+function setGauge(arcId,needleId,value,max){
+  const pct=Math.min(value/max,1);
+  document.getElementById(arcId).style.strokeDashoffset=251-pct*251;
+  document.getElementById(needleId).style.transform=`rotate(${-90+pct*180}deg)`;
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  ['diagram','safety','bom','download'].forEach((n,i)=>{
+    if(n===name)document.querySelectorAll('.tab-btn')[i].classList.add('active');
+  });
+}
+
+async function renderDiagram(code){
+  const el=document.getElementById('diagramOutput');
+  el.innerHTML=`<div class="mermaid">${code}</div>`;
+  try{await mermaid.run({nodes:el.querySelectorAll('.mermaid')});}
+  catch(e){el.innerHTML=`<pre style="color:var(--parchment-dark);font-size:.78rem;white-space:pre-wrap">${code}</pre>`;}
+}
+
+function buildMermaid(data){
+  const lines=['graph TD'];
+  (data.connections||[]).forEach(c=>{
+    lines.push(`    ${c.from.replace(/[\s\-]/g,'_')} --> ${c.to.replace(/[\s\-]/g,'_')}`);
+  });
+  return lines.join('\n');
+}
+
+function parseSafetyReport(text){
+  const checks=[];let cur=null;
+  for(const line of text.split('\n')){
+    const m=line.match(/^\[(PASS|FAIL|WARN|SKIP)\]\s+(.+)/);
+    if(m){if(cur)checks.push(cur);cur={status:m[1],name:m[2].trim(),detail:''};}
+    else if(cur&&line.trim().startsWith('->')){cur.detail=line.replace('->','').trim();}
   }
+  if(cur)checks.push(cur);
+  const pass=checks.filter(c=>c.status==='PASS').length;
+  const fail=checks.filter(c=>c.status==='FAIL').length;
+  const total=Math.max(checks.length,1);
+  document.getElementById('passCount').textContent=pass;
+  document.getElementById('failCount').textContent=fail;
+  setGauge('gArcPass','gNeedlePass',pass,total);
+  setGauge('gArcFail','gNeedleFail',fail,total);
+  checks.forEach(c=>log(`[${c.status}] ${c.name}`,c.status.toLowerCase()));
+  const grid=document.getElementById('safetyGrid');grid.innerHTML='';
+  checks.forEach(c=>{
+    const d=document.createElement('div');d.className=`safety-item ${c.status.toLowerCase()}`;
+    d.innerHTML=`<span class="safety-badge">${c.status}</span><div class="safety-name">${c.name}</div><div class="safety-detail">${c.detail}</div>`;
+    grid.appendChild(d);
+  });
+  if(fail>0){const b=document.getElementById('failBadge');b.textContent=fail+' FAIL';b.style.display='inline';}
+}
 
-  function log(msg, type='info') {
-    const box = document.getElementById('logOutput');
-    const entry = document.createElement('div');
-    entry.className = `log-entry log-${type}`;
-    const time = new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    entry.textContent = `[${time}] ${msg}`;
-    box.appendChild(entry);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  function clearLog() {
-    document.getElementById('logOutput').innerHTML = '';
-  }
-
-  function setNeedle(id, value, max) {
-    const pct = Math.min(value / max, 1);
-    const deg = -60 + pct * 120;
-    document.getElementById(id).style.transform = `rotate(${deg}deg)`;
-  }
-
-  async function renderDiagram(mermaidText) {
-    const el = document.getElementById('diagramOutput');
-    el.innerHTML = `<div class="mermaid">${mermaidText}</div>`;
-    try {
-      await mermaid.run({ nodes: el.querySelectorAll('.mermaid') });
-    } catch(e) {
-      el.innerHTML = `<pre style="color:var(--parchment-dark);font-size:0.8rem;white-space:pre-wrap">${mermaidText}</pre>`;
-    }
-  }
-
-  function buildMermaid(data) {
-    let lines = ['graph TD'];
-    const conns = data.connections || [];
-    conns.forEach(c => {
-      const f = c.from.replace(/[\s\-]/g,'_');
-      const t = c.to.replace(/[\s\-]/g,'_');
-      lines.push(`    ${f} --> ${t}`);
+function renderBomTable(csv){
+  const lines=csv.trim().split('\n').filter(l=>l.trim());
+  if(lines.length<2)return;
+  const headers=lines[0].split(',');
+  let html=`<table class="bom-table"><thead><tr>`;
+  headers.forEach(h=>{html+=`<th>${h}</th>`;});
+  html+=`</tr></thead><tbody>`;
+  lines.slice(1).forEach(row=>{
+    const isTotal=row.includes('TOTAL');
+    html+=`<tr class="${isTotal?'total-row':''}">`;
+    row.split(',').forEach(cell=>{
+      html+=`<td>${cell.startsWith('http')?`<a class="bom-link" href="${cell}" target="_blank">DigiKey ↗</a>`:cell}</td>`;
     });
-    return lines.join('\n');
+    html+=`</tr>`;
+  });
+  html+=`</tbody></table>`;
+  document.getElementById('bomOutput').innerHTML=`<div class="bom-table-wrap">${html}</div>`;
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector(`script[src="${src}"]`)){res();return;}
+    const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function displayFromZip(blob){
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+  const zip=await JSZip.loadAsync(blob);
+  const jf=zip.file('output.json');
+  if(jf){
+    const data=JSON.parse(await jf.async('text'));
+    const n=(data.components||[]).length;
+    document.getElementById('compCount').textContent=n;
+    setGauge('gArcComp','gNeedleComp',n,20);
+    await renderDiagram(buildMermaid(data));
+    log(`Circuit parsed — ${n} components found.`,'info');
   }
+  const rf=zip.file('safety_report.txt');
+  if(rf)parseSafetyReport(await rf.async('text'));
+  const bf=zip.file('BOM.csv');
+  if(bf){renderBomTable(await bf.async('text'));log('BOM table rendered.','pass');}
+}
 
-  async function runPipeline() {
-    const input = document.getElementById('circuitInput').value.trim();
-    if (!input) { alert('Please describe your circuit first.'); return; }
-
-    const btn = document.getElementById('runBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> MECHANISMS ENGAGED...';
-
-    clearLog();
-    document.getElementById('safetyGrid').innerHTML = '<div style="color:rgba(212,184,150,0.3);font-family:\'IM Fell English\',serif;font-style:italic;padding:3rem;text-align:center">Running safety audit...</div>';
-    document.getElementById('bomOutput').innerHTML = '<div style="color:rgba(212,184,150,0.3);font-family:\'IM Fell English\',serif;font-style:italic;padding:3rem;text-align:center">Generating BOM...</div>';
-    document.getElementById('downloadPanel').style.display = 'none';
-    document.getElementById('downloadPlaceholder').style.display = 'block';
-    document.getElementById('safetyBadgeTab').style.display = 'none';
-    document.getElementById('diagramOutput').innerHTML = '<div class="diagram-placeholder">⚙ &nbsp; Generating schematic... &nbsp; ⚙</div>';
-    document.getElementById('passCount').textContent = '—';
-    document.getElementById('failCount').textContent = '—';
-    document.getElementById('compCount').textContent = '—';
-
-    log('Igniting the aetheric boiler...', 'step');
-    log(`Circuit description received: "${input.substring(0,60)}${input.length>60?'...':''}"`, 'info');
-    log('Transmitting to Gemini neural engine...', 'step');
-
-    try {
-      const response = await fetch('/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request: input })
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Pipeline failed');
-      }
-
-      log('Netlist generated successfully.', 'pass');
-      log('Running electrical safety audit...', 'step');
-      log('Auto-fix loop engaged for any failures...', 'fix');
-      log('Preparing BOM — fetching component data...', 'info');
-      log('Packaging output files into ZIP...', 'step');
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      // Parse ZIP for display
-      log('Extracting design data for display...', 'step');
-      try {
-        const { BlobReader, ZipReader, TextWriter } = await import('https://deno.land/x/zipjs/index.js').catch(() => null);
-        // If import fails, just show generic success
-      } catch(e) {}
-
-      // Try to read ZIP contents using JSZip from CDN
-      await displayFromZip(blob, url);
-
-      log('output.json generated successfully.', 'pass');
-      log('Safety checks complete.', 'pass');
-      log('BOM.csv written.', 'pass');
-      log('diagram.md generated.', 'pass');
-      log('⚙ ALL MECHANISMS NOMINAL — Design package ready!', 'pass');
-
-      document.getElementById('downloadBtn').href = url;
-      document.getElementById('downloadBtn').download = 'kevin_wizard_output.zip';
-      document.getElementById('downloadPanel').style.display = 'block';
-      document.getElementById('downloadPlaceholder').style.display = 'none';
-
-    } catch(err) {
-      log(`ERROR: ${err.message}`, 'fail');
-      log('Check your API key and try again.', 'warn');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="btn-icon">⚙</span> ENGAGE THE MECHANISMS';
-    }
+async function runPipeline(){
+  const input=document.getElementById('circuitInput').value.trim();
+  if(!input){alert('Please describe your circuit first.');return;}
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> MECHANISMS ENGAGED...';
+  showLoader();clearLog();
+  document.getElementById('safetyGrid').innerHTML='<div class="placeholder-msg">Running safety audit...</div>';
+  document.getElementById('bomOutput').innerHTML='<div class="placeholder-msg">Generating BOM...</div>';
+  document.getElementById('diagramOutput').innerHTML='<div class="placeholder-msg">⚙ Generating schematic... ⚙</div>';
+  document.getElementById('downloadReady').style.display='none';
+  document.getElementById('downloadPlaceholder').style.display='block';
+  document.getElementById('failBadge').style.display='none';
+  document.getElementById('passCount').textContent='—';
+  document.getElementById('failCount').textContent='—';
+  document.getElementById('compCount').textContent='—';
+  log(`Igniting the aetheric boiler...`,'step');
+  log(`Circuit: "${input.substring(0,55)}${input.length>55?'...':''}"`, 'info');
+  log('Transmitting to Gemini...','step');
+  try{
+    const resp=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:input})});
+    if(!resp.ok){const e=await resp.json();throw new Error(e.error||'Pipeline failed');}
+    log('Netlist generated.','pass');
+    log('Safety audit running...','step');
+    log('Auto-fix loop engaged...','fix');
+    log('Enriching BOM...','info');
+    log('Packaging ZIP...','step');
+    const blob=await resp.blob();
+    const url=URL.createObjectURL(blob);
+    await displayFromZip(blob);
+    log('output.json ✓','pass');log('safety_report.txt ✓','pass');log('BOM.csv ✓','pass');log('diagram.md ✓','pass');
+    log('⚙ ALL MECHANISMS NOMINAL — Package ready!','pass');
+    document.getElementById('downloadBtn').href=url;
+    document.getElementById('downloadBtn').download='kevin_wizard_output.zip';
+    document.getElementById('downloadReady').style.display='block';
+    document.getElementById('downloadPlaceholder').style.display='none';
+  }catch(err){
+    log(`ERROR: ${err.message}`,'fail');log('Check your API key and try again.','warn');
+  }finally{
+    hideLoader();btn.disabled=false;btn.innerHTML='⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙';
   }
-
-  async function displayFromZip(blob, url) {
-    // Load JSZip dynamically
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
-    const zip = await JSZip.loadAsync(blob);
-
-    // Read output.json
-    const jsonFile = zip.file('output.json');
-    if (jsonFile) {
-      const jsonText = await jsonFile.async('text');
-      const data = JSON.parse(jsonText);
-      const compCount = (data.components || []).length;
-      document.getElementById('compCount').textContent = compCount;
-      setNeedle('needle3', compCount, 20);
-
-      // Build and render diagram
-      const mermaidCode = buildMermaid(data);
-      await renderDiagram(mermaidCode);
-      log(`Circuit has ${compCount} components.`, 'info');
-    }
-
-    // Read safety report
-    const reportFile = zip.file('safety_report.txt');
-    if (reportFile) {
-      const reportText = await reportFile.async('text');
-      parseSafetyReport(reportText);
-    }
-
-    // Read BOM CSV
-    const bomFile = zip.file('BOM.csv');
-    if (bomFile) {
-      const bomText = await bomFile.async('text');
-      renderBomTable(bomText);
-      log('BOM table rendered.', 'pass');
-    }
-  }
-
-  function parseSafetyReport(text) {
-    const lines = text.split('\n');
-    const checks = [];
-    let current = null;
-
-    for (const line of lines) {
-      const statusMatch = line.match(/^\[(PASS|FAIL|WARN|SKIP)\]\s+(.+)/);
-      if (statusMatch) {
-        if (current) checks.push(current);
-        current = { status: statusMatch[1], name: statusMatch[2].trim(), detail: '' };
-      } else if (current && line.trim().startsWith('->')) {
-        current.detail = line.replace('->', '').trim();
-      }
-    }
-    if (current) checks.push(current);
-
-    const passCount = checks.filter(c => c.status === 'PASS').length;
-    const failCount = checks.filter(c => c.status === 'FAIL').length;
-
-    document.getElementById('passCount').textContent = passCount;
-    document.getElementById('failCount').textContent = failCount;
-    setNeedle('needle1', passCount, Math.max(checks.length, 1));
-    setNeedle('needle2', failCount, Math.max(checks.length, 1));
-
-    checks.forEach(c => log(`[${c.status}] ${c.name}`, c.status.toLowerCase()));
-
-    // Render safety grid
-    const grid = document.getElementById('safetyGrid');
-    grid.innerHTML = '';
-    checks.forEach(c => {
-      const div = document.createElement('div');
-      div.className = `safety-item ${c.status.toLowerCase()}`;
-      div.innerHTML = `
-        <span class="safety-badge">${c.status}</span>
-        <div class="safety-name">${c.name}</div>
-        <div class="safety-detail">${c.detail}</div>
-      `;
-      grid.appendChild(div);
-    });
-
-    // Show fail badge on tab
-    if (failCount > 0) {
-      const badge = document.getElementById('safetyBadgeTab');
-      badge.textContent = failCount + ' FAIL';
-      badge.style.display = 'inline';
-    }
-  }
-
-  function renderBomTable(csvText) {
-    const lines = csvText.trim().split('\n').filter(l => l.trim());
-    if (lines.length < 2) return;
-    const headers = lines[0].split(',');
-    const rows = lines.slice(1);
-    let html = `<table style="width:100%;border-collapse:collapse;font-size:0.8rem">
-      <thead><tr>`;
-    headers.forEach(h => {
-      html += `<th style="text-align:left;padding:0.5rem 0.7rem;border-bottom:1px solid var(--brass-dark);font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.1em;color:var(--brass);text-transform:uppercase">${h}</th>`;
-    });
-    html += `</tr></thead><tbody>`;
-    rows.forEach((row, i) => {
-      const cells = row.split(',');
-      const isTotal = row.includes('TOTAL');
-      html += `<tr style="background:${isTotal ? 'rgba(200,146,42,0.08)' : i%2===0 ? 'rgba(0,0,0,0.2)' : 'transparent'}">`;
-      cells.forEach((cell, ci) => {
-        const isUrl = cell.startsWith('http');
-        const val = isUrl ? `<a href="${cell}" target="_blank" style="color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass-dark)">DigiKey ↗</a>` : cell;
-        html += `<td style="padding:0.45rem 0.7rem;border-bottom:1px solid rgba(200,146,42,0.08);color:${isTotal ? 'var(--brass-light)' : 'var(--parchment-dark)'};font-weight:${isTotal ? 'bold' : 'normal'}">${val}</td>`;
-      });
-      html += `</tr>`;
-    });
-    html += `</tbody></table>`;
-    document.getElementById('bomOutput').innerHTML = html;
-  }
-
-  function switchTab(name) {
-    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    const tabs = ['diagram','safety','bom','download'];
-    document.querySelectorAll('.tab-btn')[tabs.indexOf(name)].classList.add('active');
-  }
-
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-      const s = document.createElement('script');
-      s.src = src; s.onload = resolve; s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
+}
 </script>
 </body>
 </html>
