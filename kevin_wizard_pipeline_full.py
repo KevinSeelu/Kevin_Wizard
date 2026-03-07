@@ -91,10 +91,24 @@ Return ONLY raw JSON. No markdown, no explanation.
 
 # ==============================================================
 #  GEMINI RATE-LIMIT SAFE CALLER
+#  - Global throttle: 5s minimum gap between all calls (~12/min)
+#  - Exponential backoff on 429: 60s, 120s, 180s...
+#  - 7 retries (up from original 3)
 # ==============================================================
-def gemini_call_with_retry(system_instruction, prompt, max_retries=3):
+_last_call_time = 0.0
+FREE_TIER_MIN_GAP = 5.0
+
+
+def gemini_call_with_retry(system_instruction, prompt, max_retries=7):
+    global _last_call_time
+    elapsed = time.time() - _last_call_time
+    if elapsed < FREE_TIER_MIN_GAP:
+        wait = FREE_TIER_MIN_GAP - elapsed
+        print(f"  ⏸  Throttling {wait:.1f}s (free tier gap)...")
+        time.sleep(wait)
     for attempt in range(1, max_retries + 1):
         try:
+            _last_call_time = time.time()
             response = client.models.generate_content(
                 model=MODEL,
                 contents=prompt,
@@ -107,9 +121,12 @@ def gemini_call_with_retry(system_instruction, prompt, max_retries=3):
             error_str = str(e)
             if "429" in error_str or "quota" in error_str.lower() or "rate" in error_str.lower():
                 wait_match = re.search(r'seconds:\s*(\d+)', error_str)
-                wait_seconds = int(wait_match.group(1)) + 5 if wait_match else 60
-                print(f"\n Rate limit hit. Waiting {wait_seconds}s before retry (attempt {attempt}/{max_retries})...")
+                wait_seconds = int(wait_match.group(1)) + 5 if wait_match else (60 * attempt)
+                print(f"\n  ⏳ Rate limit hit. Waiting {wait_seconds}s before retry "
+                      f"(attempt {attempt}/{max_retries})...")
+                print(f"     Tip: upgrade to a paid API key to avoid these delays.")
                 time.sleep(wait_seconds)
+                _last_call_time = time.time()
             else:
                 raise e
     raise Exception(f"Gemini call failed after {max_retries} retries.")
@@ -145,13 +162,19 @@ SAMPLE_JSON = {
 #  STEP 3: STATIC COMPONENT DATABASE
 # ==============================================================
 COMPONENTS = {
-    "ESP32": {"part_number": "ESP32-WROOM-32E", "voltage": 3.3, "price_usd": 3.50, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"},
-    "L298N": {"part_number": "L298N", "voltage": 5, "price_usd": 1.80, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"},
-    "TP4056": {"part_number": "TP4056-SOT25", "voltage": 4.2, "price_usd": 0.30, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"},
-    "LiPo Battery": {"part_number": "PRT-13854", "voltage": 3.7, "price_usd": 9.95, "package": "THT", "in_stock": True, "digikey_url": "https://www.sparkfun.com/products/13854"},
-    "AMS1117-3.3": {"part_number": "AMS1117-3.3", "voltage": 3.3, "price_usd": 0.25, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"},
-    "Decoupling Capacitor": {"part_number": "C0402C104K5RACTU", "voltage": 10, "price_usd": 0.05, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"},
-    "ESD Diode": {"part_number": "PRTR5V0U2X", "voltage": 5, "price_usd": 0.40, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/nexperia-usa-inc/PRTR5V0U2X/1177477"},
+    "ESP32":               {"part_number": "ESP32-WROOM-32E",   "voltage": 3.3, "price_usd": 3.50,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"},
+    "L298N":               {"part_number": "L298N",             "voltage": 5,   "price_usd": 1.80,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"},
+    "TP4056":              {"part_number": "TP4056-SOT25",      "voltage": 4.2, "price_usd": 0.30,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"},
+    "LiPo Battery":        {"part_number": "PRT-13854",         "voltage": 3.7, "price_usd": 9.95,  "package": "THT", "in_stock": True, "digikey_url": "https://www.sparkfun.com/products/13854"},
+    "AMS1117-3.3":         {"part_number": "AMS1117-3.3",       "voltage": 3.3, "price_usd": 0.25,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"},
+    "Decoupling Capacitor":{"part_number": "C0402C104K5RACTU", "voltage": 10,  "price_usd": 0.05,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"},
+    "ESD Diode":           {"part_number": "PRTR5V0U2X",        "voltage": 5,   "price_usd": 0.40,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/nexperia-usa-inc/PRTR5V0U2X/1177477"},
+    "Arduino-Uno-R3":      {"part_number": "A000066",           "voltage": 5.0, "price_usd": 27.60, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/arduino/A000066/2784006"},
+    "Red-LED":             {"part_number": "HLMP-EG08-Y2000",   "voltage": 2.0, "price_usd": 0.35,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/broadcom-limited/HLMP-EG08-Y2000/3906329"},
+    "Yellow-LED":          {"part_number": "TLHY4200",          "voltage": 2.1, "price_usd": 0.30,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHY4200/1805986"},
+    "Green-LED":           {"part_number": "TLHG4200",          "voltage": 2.2, "price_usd": 0.30,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHG4200/1806003"},
+    "Resistor-220R":       {"part_number": "CF14JT220R",        "voltage": 0,   "price_usd": 0.10,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT220R/1741547"},
+    "USB-5V-Supply":       {"part_number": "GENERIC-USB-5V",    "voltage": 5.0, "price_usd": 5.00,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/filter/usb-cables/469"},
 }
 
 
@@ -164,10 +187,10 @@ def generate_and_save_json(user_request):
         text = gemini_call_with_retry(NETLIST_SYSTEM, user_request)
         with open("output.json", "w") as f:
             f.write(text)
-        print("Success! Design logic saved to output.json.")
+        print("✅ Success! Design logic saved to output.json.")
         return True
     except Exception as e:
-        print(f"Error: {e}. Make sure your API key is in the .env file.")
+        print(f"❌ Error: {e}. Make sure your API key is in the .env file.")
         return False
 
 
@@ -188,16 +211,19 @@ def load_json():
 #  STEP 6: SMART AI-POWERED SAFETY CHECKS
 # ==============================================================
 def run_checks(data):
-    print("\n Asking Gemini to analyse the circuit and run smart safety checks...\n")
+    print("\n🔍 Asking Gemini to analyse the circuit and run smart safety checks...\n")
     try:
         circuit_summary = json.dumps(data, indent=2)
-        raw = gemini_call_with_retry(SAFETY_SYSTEM, f"Analyse this circuit and run smart safety checks:\n\n{circuit_summary}")
+        raw = gemini_call_with_retry(
+            SAFETY_SYSTEM,
+            f"Analyse this circuit and run smart safety checks:\n\n{circuit_summary}"
+        )
         raw = raw.strip().replace("```json", "").replace("```", "").strip()
         results = json.loads(raw)
-        print(f" Gemini generated {len(results)} smart safety checks for this project.")
+        print(f"✅ Gemini generated {len(results)} smart safety checks for this project.")
         return results
     except Exception as e:
-        print(f"  Smart checks failed ({e}). Returning error result.")
+        print(f"⚠️  Smart checks failed ({e}). Returning error result.")
         return [{"check": "AI Safety Check", "status": "WARN", "detail": f"Could not run smart checks: {e}"}]
 
 
@@ -239,9 +265,9 @@ def print_and_save_report(results, data):
     lines.append("  SUMMARY: " + str(pass_count) + " passed,  " + str(fail_count) + " failed,  "
                  + str(len(results) - pass_count - fail_count) + " warnings/skipped")
     if fail_count == 0:
-        lines.append("  OVERALL: DESIGN LOOKS SAFE TO PROCEED!")
+        lines.append("  OVERALL: ✅ DESIGN LOOKS SAFE TO PROCEED!")
     else:
-        lines.append("  OVERALL: " + str(fail_count) + " ISSUE(S) NEED FIXING BEFORE MANUFACTURE.")
+        lines.append("  OVERALL: ❌ " + str(fail_count) + " ISSUE(S) NEED FIXING BEFORE MANUFACTURE.")
     lines.append("=" * 60)
 
     report_text = "\n".join(lines)
@@ -253,44 +279,29 @@ def print_and_save_report(results, data):
 
 # ==============================================================
 #  STEP 8: AUTO-FETCH UNKNOWN COMPONENTS
+#  Batches ALL unknown components into ONE Gemini call
 # ==============================================================
-def fetch_from_web(component_name):
+def fetch_from_gemini_batch(component_names):
+    if not component_names:
+        return {}
+    print(f"\n🔄 Batch-fetching {len(component_names)} unknown component(s) in ONE Gemini call...")
+    batch_prompt = (
+        "For each component in the list below, return a JSON object.\n"
+        "Return ONLY a raw JSON array (no markdown) where each element has:\n"
+        '  {"name": "...", "part_number": "...", "voltage": 0, "price_usd": 0.00, '
+        '"package": "THT or SMD", "in_stock": true, "digikey_url": "https://www.digikey.com/..."}\n\n'
+        "Components:\n" + "\n".join(f"- {n}" for n in component_names)
+    )
     try:
-        search_url = f"https://www.digikey.com/en/products/result?keywords={component_name.replace(' ', '+')}"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(search_url, headers=headers, timeout=6)
-        if response.status_code == 200:
-            price_match = re.search(r'\$(\d+\.\d+)', response.text)
-            price = float(price_match.group(1)) if price_match else 1.00
-            print(f"   Web fetch succeeded for '{component_name}' (DigiKey)")
-            return {"part_number": component_name.upper().replace(" ", "-"), "voltage": 5.0, "price_usd": price, "package": "THT", "in_stock": True, "digikey_url": search_url}
-    except Exception as e:
-        print(f"    Web fetch failed for '{component_name}': {e}")
-    return None
-
-
-def fetch_from_gemini(component_name):
-    try:
-        raw = gemini_call_with_retry(LOOKUP_SYSTEM, f"Give me component details for: {component_name}")
+        raw = gemini_call_with_retry(LOOKUP_SYSTEM, batch_prompt)
         raw = raw.strip().replace("```json", "").replace("```", "").strip()
-        data = json.loads(raw)
-        print(f"   Gemini fallback succeeded for '{component_name}'")
-        return data
+        items = json.loads(raw)
+        result = {item.get("name", ""): item for item in items if item.get("name")}
+        print(f"✅ Batch lookup returned {len(result)} component(s).")
+        return result
     except Exception as e:
-        print(f"   Gemini fallback also failed for '{component_name}': {e}")
-        return None
-
-
-def auto_fetch_component(component_name):
-    print(f"\n Auto-fetching unknown component: '{component_name}'")
-    result = fetch_from_web(component_name)
-    if result:
-        return result
-    result = fetch_from_gemini(component_name)
-    if result:
-        return result
-    print(f"    Could not fetch '{component_name}' - using placeholder.")
-    return {"part_number": "UNKNOWN", "voltage": 0, "price_usd": 0.00, "package": "UNKNOWN", "in_stock": False, "digikey_url": "N/A"}
+        print(f"⚠️  Batch Gemini lookup failed: {e}")
+        return {}
 
 
 # ==============================================================
@@ -302,31 +313,44 @@ def generate_bom(data, csv_path="BOM.csv"):
     print("=" * 60)
 
     names = [c["name"] for c in data.get("components", [])]
-    enriched = []
+    db_hits = {}
+    unknowns = []
 
     for name in names:
         if name in COMPONENTS:
-            row = COMPONENTS[name].copy()
+            db_hits[name] = COMPONENTS[name].copy()
+            db_hits[name]["name"] = name
+            print(f"  ✅ Found in DB: '{name}'")
+        else:
+            unknowns.append(name)
+
+    gemini_results = fetch_from_gemini_batch(unknowns) if unknowns else {}
+
+    enriched = []
+    for name in names:
+        if name in db_hits:
+            enriched.append(db_hits[name])
+        elif name in gemini_results:
+            row = gemini_results[name]
             row["name"] = name
             enriched.append(row)
-            print(f"   Found in DB: '{name}'")
         else:
-            fetched = auto_fetch_component(name)
-            fetched["name"] = name
-            enriched.append(fetched)
+            enriched.append({"name": name, "part_number": "UNKNOWN", "voltage": 0,
+                              "price_usd": 0.00, "package": "UNKNOWN",
+                              "in_stock": False, "digikey_url": "N/A"})
 
     fields = ["name", "part_number", "voltage", "price_usd", "package", "in_stock", "digikey_url"]
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
+        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(enriched)
 
-    total = round(sum(c["price_usd"] for c in enriched), 2)
-    print(f"\n BOM.csv written - {len(enriched)} components, estimated cost: ${total}")
+    total = round(sum(c.get("price_usd", 0) for c in enriched), 2)
+    print(f"\n✅ BOM.csv written - {len(enriched)} components, estimated cost: ${total}")
 
-    unknown = [c["name"] for c in enriched if c["part_number"] == "UNKNOWN"]
-    if unknown:
-        print(f"  Could not resolve: {unknown}")
+    unknown_names = [c["name"] for c in enriched if c.get("part_number") == "UNKNOWN"]
+    if unknown_names:
+        print(f"  ⚠️  Could not resolve: {unknown_names}")
 
     return enriched
 
@@ -338,7 +362,7 @@ def auto_fix(data, results):
     fails = [r for r in results if r["status"] == "FAIL"]
 
     if not fails:
-        print("\n No FAILs found - nothing to auto-fix!")
+        print("\n✅ No FAILs found - nothing to auto-fix!")
         return data
 
     print("\n" + "=" * 60)
@@ -346,10 +370,14 @@ def auto_fix(data, results):
     print("=" * 60)
 
     for f in fails:
-        print(f"   Fixing: [{f['check']}]  {f['detail'][:60]}...")
+        print(f"  🔧 Fixing: [{f['check']}]  {f['detail'][:60]}...")
 
     try:
-        prompt = f"Circuit JSON:\n{json.dumps(data, indent=2)}\n\nFAIL checks to fix:\n{json.dumps(fails, indent=2)}\n\nFix all the FAILs and return the updated circuit with explanation."
+        prompt = (
+            f"Circuit JSON:\n{json.dumps(data, indent=2)}\n\n"
+            f"FAIL checks to fix:\n{json.dumps(fails, indent=2)}\n\n"
+            "Fix all the FAILs and return the updated circuit with explanation."
+        )
         raw = gemini_call_with_retry(FIX_SYSTEM, prompt)
         raw = raw.strip().replace("```json", "").replace("```", "").strip()
         result = json.loads(raw)
@@ -357,7 +385,7 @@ def auto_fix(data, results):
         fixed_circuit = result.get("fixed_circuit", data)
         fixes_applied = result.get("fixes_applied", [])
 
-        print("\n FIXES APPLIED:")
+        print("\n✅ FIXES APPLIED:")
         print("-" * 60)
         for i, fix in enumerate(fixes_applied, 1):
             print(f"  {i}. {fix}")
@@ -365,50 +393,241 @@ def auto_fix(data, results):
         with open("output.json", "w") as f:
             json.dump(fixed_circuit, f, indent=2)
 
-        print("\n output.json overwritten with fixed circuit design.")
+        print("\n✅ output.json overwritten with fixed circuit design.")
         return fixed_circuit
 
     except Exception as e:
-        print(f"\n Auto-fix failed: {e}")
+        print(f"\n❌ Auto-fix failed: {e}")
         return data
+
+
+# ==============================================================
+#  STEP 11: KICAD NETLIST GENERATOR
+#  Converts circuit JSON → KiCad .net file (no extra file needed)
+# ==============================================================
+FOOTPRINT_MAP = {
+    # MCUs
+    "Arduino-Uno-R3":       ("MCU_Module",       "Arduino_Uno_R3",       "Package_DIP:DIP-28_W15.24mm"),
+    "Arduino_Uno_R3":       ("MCU_Module",       "Arduino_Uno_R3",       "Package_DIP:DIP-28_W15.24mm"),
+    "ESP32":                ("RF_Module",        "ESP32-WROOM-32",        "RF_Module:ESP32-WROOM-32"),
+    "ESP32-S3":             ("RF_Module",        "ESP32-S3-WROOM-1",      "RF_Module:ESP32-S3-WROOM-1"),
+    "STM32":                ("MCU_ST_STM32",     "STM32F103C8Tx",         "Package_QFP:LQFP-48_7x7mm"),
+    # Power
+    "AMS1117-3.3":          ("Device",           "Regulator_Linear",      "Package_TO_SOT_SMD:SOT-223-3_TabPin2"),
+    "TP4056":               ("Battery_Management","TP4056",               "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"),
+    "USB-5V-Supply":        ("Connector",        "USB_B",                 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    "LiPo":                 ("Device",           "Battery",               "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    "LiPo-Battery":         ("Device",           "Battery",               "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    # Drivers
+    "L298N":                ("Motor_Control",    "L298N",                 "Package_TO_SOT_THT:TO-220-15"),
+    # LEDs
+    "Red-LED":              ("Device",           "LED",                   "LED_THT:LED_D5.0mm"),
+    "Yellow-LED":           ("Device",           "LED",                   "LED_THT:LED_D5.0mm"),
+    "Green-LED":            ("Device",           "LED",                   "LED_THT:LED_D5.0mm"),
+    "Blue-LED":             ("Device",           "LED",                   "LED_THT:LED_D5.0mm"),
+    # Passives
+    "Resistor-220R":        ("Device",           "R",                     "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "Resistor-1K":          ("Device",           "R",                     "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "Resistor-10K":         ("Device",           "R",                     "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "Decoupling-Capacitor": ("Device",           "C",                     "Capacitor_SMD:C_0402_1005Metric"),
+    "ESD-Diode":            ("Device",           "D_Zener",               "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal"),
+    # Generic fallbacks by type
+    "__MCU__":              ("MCU_Module",       "Generic_MCU",           "Package_DIP:DIP-28_W15.24mm"),
+    "__LED__":              ("Device",           "LED",                   "LED_THT:LED_D5.0mm"),
+    "__Resistor__":         ("Device",           "R",                     "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+    "__Capacitor__":        ("Device",           "C",                     "Capacitor_SMD:C_0402_1005Metric"),
+    "__PowerSupply__":      ("Connector",        "USB_B",                 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"),
+    "__Motor__":            ("Motor_Control",    "L298N",                 "Package_TO_SOT_THT:TO-220-15"),
+    "__Default__":          ("Device",           "Generic_Component",     "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"),
+}
+
+
+def get_footprint(name, comp_type):
+    clean = name.replace(" ", "-")
+    if clean in FOOTPRINT_MAP:
+        return FOOTPRINT_MAP[clean]
+    if name in FOOTPRINT_MAP:
+        return FOOTPRINT_MAP[name]
+    for key in FOOTPRINT_MAP:
+        if key.startswith("__"):
+            continue
+        if key.lower() in name.lower() or name.lower() in key.lower():
+            return FOOTPRINT_MAP[key]
+    type_key = f"__{comp_type}__"
+    if type_key in FOOTPRINT_MAP:
+        return FOOTPRINT_MAP[type_key]
+    return FOOTPRINT_MAP["__Default__"]
+
+
+def build_net_map(connections, components):
+    name_to_id  = {c["name"]: c["id"] for c in components}
+    net_map     = {}
+    pin_counter = {}
+
+    def get_pin(ref):
+        pin_counter[ref] = pin_counter.get(ref, 0) + 1
+        return pin_counter[ref]
+
+    for conn in connections:
+        from_name = conn["from"]
+        to_name   = conn["to"]
+        from_ref  = name_to_id.get(from_name, from_name)
+        to_ref    = name_to_id.get(to_name,   to_name)
+
+        net_name = f"Net-{re.sub(r'[^A-Za-z0-9_]', '_', from_name)}_to_{re.sub(r'[^A-Za-z0-9_]', '_', to_name)}"
+
+        if "gnd" in from_name.lower() or "ground" in from_name.lower():
+            net_name = "GND"
+        elif "gnd" in to_name.lower() or "ground" in to_name.lower():
+            net_name = "GND"
+        elif "vcc" in from_name.lower() or "5v" in from_name.lower() or "power" in from_name.lower():
+            net_name = "VCC_5V"
+        elif "3.3" in from_name or "3v3" in from_name.lower():
+            net_name = "VCC_3V3"
+
+        if net_name not in net_map:
+            net_map[net_name] = []
+        net_map[net_name].append((from_ref, get_pin(from_ref)))
+        net_map[net_name].append((to_ref,   get_pin(to_ref)))
+
+    return net_map
+
+
+def generate_kicad_netlist(data, output_path="design.net"):
+    components  = data.get("components",  [])
+    connections = data.get("connections", [])
+    title       = data.get("title", "PCB_Project")
+
+    print(f"\n{'='*60}")
+    print("  GENERATING KICAD NETLIST")
+    print(f"{'='*60}")
+    print(f"  Components : {len(components)}")
+    print(f"  Connections: {len(connections)}")
+
+    lines = [
+        "(export (version D)",
+        "  (design",
+        f"    (source {title}.sch)",
+        f"    (date \"{datetime.now().strftime('%Y-%m-%d')}\")",
+        "    (tool \"Kevin the Wizard - PCB Co-Pilot AI\"))",
+        "  (components",
+    ]
+
+    for comp in components:
+        ref  = comp["id"]
+        name = comp["name"]
+        lib, part, footprint = get_footprint(name, comp.get("type", "Default"))
+        lines += [
+            f"    (comp (ref {ref})",
+            f"      (value {name})",
+            f"      (libsource (lib {lib}) (part {part}))",
+            f"      (footprint {footprint}))",
+        ]
+        print(f"  ✅ {ref} → {name}  [{footprint}]")
+
+    # Always add power symbols
+    lines += [
+        "    (comp (ref PWR_GND)",
+        "      (value GND)",
+        "      (libsource (lib power) (part GND))",
+        "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
+        "    (comp (ref PWR_VCC)",
+        "      (value VCC)",
+        "      (libsource (lib power) (part VCC))",
+        "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
+        "  )",
+        "  (nets",
+    ]
+
+    net_map = build_net_map(connections, components)
+    if "GND"    not in net_map: net_map["GND"]    = []
+    if "VCC_5V" not in net_map: net_map["VCC_5V"] = []
+    net_map["GND"].append(("PWR_GND", 1))
+    net_map["VCC_5V"].append(("PWR_VCC", 1))
+
+    for code, (net_name, nodes) in enumerate(net_map.items(), start=1):
+        lines.append(f"    (net (code {code}) (name \"{net_name}\")")
+        seen = set()
+        for ref, pin in nodes:
+            if (ref, pin) not in seen:
+                seen.add((ref, pin))
+                lines.append(f"      (node (ref {ref}) (pin {pin}))")
+        lines.append("    )")
+
+    lines += ["  )", ")"]
+
+    with open(output_path, "w") as f:
+        f.write("\n".join(lines))
+
+    print(f"\n✅ KiCad netlist saved → {output_path}")
+    print(f"   Nets generated: {len(net_map)}")
+    print(f"{'='*60}\n")
 
 
 # ==============================================================
 #  MAIN PIPELINE
 # ==============================================================
 if __name__ == "__main__":
-    print("Kevin the Wizard's Safety Checker starting...\n")
+    print("🧙 Kevin the Wizard's Safety Checker starting...\n")
 
     user_request = "traffic signal circuit using arduino uno r3"
-    MAX_FIX_ROUNDS = 5
+    MAX_FIX_ROUNDS = 3
 
+    # 1. Generate netlist JSON
     generate_and_save_json(user_request)
+
+    # 2. Load it
     data = load_json()
+
+    # 3. First safety check
     results = run_checks(data)
     print_and_save_report(results, data)
 
+    # 4. Auto-fix loop
     fix_round = 0
     while True:
         fails = [r for r in results if r["status"] == "FAIL"]
 
         if not fails:
-            print("\n All FAILs resolved! Design is clean.")
+            print("\n✅ All FAILs resolved! Design is clean.")
             break
 
         if fix_round >= MAX_FIX_ROUNDS:
-            print(f"\n  Reached max fix rounds ({MAX_FIX_ROUNDS}). Stopping auto-fix.")
+            print(f"\n⚠️  Reached max fix rounds ({MAX_FIX_ROUNDS}). Stopping auto-fix.")
             print(f"   Remaining FAILs: {[f['check'] for f in fails]}")
             break
 
         fix_round += 1
-        print(f"\n FIX ROUND {fix_round} - {len(fails)} FAIL(s) remaining...")
-        data = auto_fix(data, results)
-        print(f"\n Re-running safety checks after round {fix_round}...\n")
+        print(f"\n🔧 FIX ROUND {fix_round} - {len(fails)} FAIL(s) remaining...")
+        new_data = auto_fix(data, results)
+
+        if new_data != data:
+            data = new_data
+        else:
+            print("⚠️  Fix returned unchanged data — stopping to avoid infinite loop.")
+            break
+
+        print(f"\n🔍 Re-running safety checks after round {fix_round}...\n")
         results = run_checks(data)
         print_and_save_report(results, data)
 
+    # 5. Summary
     print("\n" + "=" * 60)
     print(f"  PIPELINE COMPLETE - {fix_round} fix round(s) applied.")
     print("=" * 60)
 
+    # 6. Generate BOM
     generate_bom(data)
+
+    # 7. Generate KiCad netlist
+    generate_kicad_netlist(data, "design.net")
+
+    print("\n" + "=" * 60)
+    print("  ✅ ALL FILES GENERATED:")
+    print("     📄 output.json       - Circuit design")
+    print("     📄 safety_report.txt - Safety analysis")
+    print("     📄 BOM.csv           - Bill of materials")
+    print("     📄 design.net        - KiCad netlist")
+    print("  📦 Import design.net into KiCad:")
+    print("     PCB Editor → File → Import → Netlist → Update PCB")
+    print("=" * 60)
