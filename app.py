@@ -24,15 +24,71 @@ CORS(app)
 netlist_model = genai.GenerativeModel(
     model_name="gemini-3.1-flash-lite-preview",
     system_instruction="""
-    You are a Senior Hardware Engineer (PS1 Specialist).
-    Your job is to parse descriptions into a JSON Netlist.
+    You are a Senior Hardware Engineer (PCB Specialist).
+    Your job is to parse descriptions into a detailed JSON Netlist with pin-level assignments.
+
     Rules:
     - Return ONLY raw JSON. No markdown blocks (no ```).
     - Include: MCU, Power Stage (LDO/Buck), Motor Drivers, and Passives.
-    - Format: {"components": [{"id": "U1", "name": "ESP32-S3", "type": "MCU", "voltage": 3.3}], "connections": [{"from": "LiPo", "to": "ESP32"}]}
-    - Each component MUST include: id, name, type, and voltage fields.
+    - Each component MUST include: id, name, type, voltage fields.
     - connections must use "from" and "to" keys matching component names.
-    - Output ONLY raw JSON. No markdown, no extra text.
+    - For MCUs (ESP32, Arduino, STM32, Raspberry Pi, etc.) you MUST include a "pin_assignments" array.
+    - Each pin_assignment must specify: pin_number, pin_name, signal, connected_to, peripheral.
+    - Detect and resolve peripheral conflicts: do NOT assign two signals to the same pin.
+    - Flag any I2C/SPI/UART/PWM peripheral conflicts in a "conflicts" array (empty if none).
+
+    Output format (return ONLY this JSON, no extra text):
+    {
+      "components": [{"id": "U1", "name": "ESP32", "type": "MCU", "voltage": 3.3}],
+      "connections": [{"from": "ComponentA", "to": "ComponentB", "signal": "SDA"}],
+      "pin_assignments": [
+        {
+          "component_id": "U1",
+          "component_name": "ESP32",
+          "pins": [
+            {"pin_number": "GPIO21", "pin_name": "SDA", "signal": "I2C_SDA", "connected_to": "OLED_Display", "peripheral": "I2C0"},
+            {"pin_number": "GPIO22", "pin_name": "SCL", "signal": "I2C_SCL", "connected_to": "OLED_Display", "peripheral": "I2C0"},
+            {"pin_number": "GND",    "pin_name": "GND", "signal": "GND",     "connected_to": "GND_Rail",     "peripheral": "Power"},
+            {"pin_number": "3V3",    "pin_name": "VCC", "signal": "VCC_3V3", "connected_to": "LDO_Output",   "peripheral": "Power"}
+          ]
+        }
+      ],
+      "conflicts": []
+    }
+
+    If a component is NOT an MCU (e.g. LED, resistor, motor driver), skip it in pin_assignments.
+    Always include GND and VCC pins in the MCU pin list.
+    Output ONLY raw JSON. No markdown, no extra text.
+    """
+)
+
+validation_model = genai.GenerativeModel(
+    model_name="gemini-3.1-flash-lite-preview",
+    system_instruction="""
+    You are a Senior Hardware Engineer and circuit feasibility expert.
+    Your job is to evaluate whether a circuit design request is feasible and buildable.
+
+    A request is IMPOSSIBLE or INVALID if it:
+    - Violates fundamental laws of physics (e.g. perpetual motion, free energy)
+    - Contains contradictory requirements (e.g. "5V input but 100V output with no boost converter")
+    - Is completely unrelated to electronics or circuits (e.g. "make me a sandwich")
+    - Requests components that cannot physically work together as described
+    - Is completely vague with no actionable circuit information (e.g. "make something cool")
+
+    A request is POSSIBLE even if it is:
+    - Simple (e.g. "blink an LED with Arduino")
+    - Complex (e.g. "motor controller with battery management")
+    - Unconventional but physically valid
+
+    Return ONLY raw JSON in this exact format (no markdown, no extra text):
+    {
+      "feasible": true or false,
+      "reason": "One sentence explaining why it is or is not feasible.",
+      "suggestions": ["Specific suggestion 1", "Specific suggestion 2", "Specific suggestion 3"]
+    }
+
+    If feasible is true, suggestions should list optional improvements.
+    If feasible is false, suggestions MUST be specific actionable alternatives the user can try instead.
     """
 )
 
@@ -40,17 +96,17 @@ netlist_model = genai.GenerativeModel(
 #  STATIC COMPONENT DATABASE
 # ==============================================================
 COMPONENTS = {
-    "ESP32":               {"part_number": "ESP32-WROOM-32E",   "voltage": 3.3, "price_usd": 3.50, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"},
-    "L298N":               {"part_number": "L298N",             "voltage": 5,   "price_usd": 1.80, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"},
-    "TP4056":              {"part_number": "TP4056-SOT25",      "voltage": 4.2, "price_usd": 0.30, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"},
-    "AMS1117-3.3":         {"part_number": "AMS1117-3.3",       "voltage": 3.3, "price_usd": 0.25, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"},
-    "Decoupling Capacitor":{"part_number": "C0402C104K5RACTU", "voltage": 10,  "price_usd": 0.05, "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"},
-    "Arduino-Uno-R3":      {"part_number": "A000066",           "voltage": 5.0, "price_usd": 27.60,"package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/arduino/A000066/2784006"},
-    "Red-LED":             {"part_number": "HLMP-EG08-Y2000",   "voltage": 2.0, "price_usd": 0.35, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/broadcom-limited/HLMP-EG08-Y2000/3906329"},
-    "Yellow-LED":          {"part_number": "TLHY4200",          "voltage": 2.1, "price_usd": 0.30, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHY4200/1805986"},
-    "Green-LED":           {"part_number": "TLHG4200",          "voltage": 2.2, "price_usd": 0.30, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHG4200/1806003"},
-    "Resistor-220R":       {"part_number": "CF14JT220R",        "voltage": 0,   "price_usd": 0.10, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT220R/1741547"},
-    "USB-5V-Supply":       {"part_number": "GENERIC-USB-5V",    "voltage": 5.0, "price_usd": 5.00, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/filter/usb-cables/469"},
+    "ESP32":               {"part_number": "ESP32-WROOM-32E",   "voltage": 3.3, "price_usd": 3.50,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/espressif-systems/ESP32-WROOM-32E/11613142"},
+    "L298N":               {"part_number": "L298N",             "voltage": 5,   "price_usd": 1.80,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stmicroelectronics/L298N/585918"},
+    "TP4056":              {"part_number": "TP4056-SOT25",      "voltage": 4.2, "price_usd": 0.30,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/tc-charger/TP4056/7353588"},
+    "AMS1117-3.3":         {"part_number": "AMS1117-3.3",       "voltage": 3.3, "price_usd": 0.25,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/advanced-monolithic-systems-inc/AMS1117-3-3/5010163"},
+    "Decoupling Capacitor":{"part_number": "C0402C104K5RACTU", "voltage": 10,  "price_usd": 0.05,  "package": "SMD", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/kemet/C0402C104K5RACTU/411388"},
+    "Arduino-Uno-R3":      {"part_number": "A000066",           "voltage": 5.0, "price_usd": 27.60, "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/arduino/A000066/2784006"},
+    "Red-LED":             {"part_number": "HLMP-EG08-Y2000",   "voltage": 2.0, "price_usd": 0.35,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/broadcom-limited/HLMP-EG08-Y2000/3906329"},
+    "Yellow-LED":          {"part_number": "TLHY4200",          "voltage": 2.1, "price_usd": 0.30,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHY4200/1805986"},
+    "Green-LED":           {"part_number": "TLHG4200",          "voltage": 2.2, "price_usd": 0.30,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/vishay-semiconductor-opto-division/TLHG4200/1806003"},
+    "Resistor-220R":       {"part_number": "CF14JT220R",        "voltage": 0,   "price_usd": 0.10,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT220R/1741547"},
+    "USB-5V-Supply":       {"part_number": "GENERIC-USB-5V",    "voltage": 5.0, "price_usd": 5.00,  "package": "THT", "in_stock": True, "digikey_url": "https://www.digikey.com/en/products/filter/usb-cables/469"},
 }
 
 # ==============================================================
@@ -87,103 +143,6 @@ FOOTPRINT_MAP = {
 }
 
 
-def get_footprint(name, comp_type):
-    clean = name.replace(" ", "-")
-    if clean in FOOTPRINT_MAP: return FOOTPRINT_MAP[clean]
-    if name  in FOOTPRINT_MAP: return FOOTPRINT_MAP[name]
-    for key in FOOTPRINT_MAP:
-        if key.startswith("__"): continue
-        if key.lower() in name.lower() or name.lower() in key.lower():
-            return FOOTPRINT_MAP[key]
-    type_key = f"__{comp_type}__"
-    if type_key in FOOTPRINT_MAP: return FOOTPRINT_MAP[type_key]
-    return FOOTPRINT_MAP["__Default__"]
-
-
-def build_net_map(connections, components):
-    name_to_id  = {c["name"]: c["id"] for c in components}
-    net_map     = {}
-    pin_counter = {}
-
-    def get_pin(ref):
-        pin_counter[ref] = pin_counter.get(ref, 0) + 1
-        return pin_counter[ref]
-
-    for conn in connections:
-        from_name = conn["from"]
-        to_name   = conn["to"]
-        from_ref  = name_to_id.get(from_name, from_name)
-        to_ref    = name_to_id.get(to_name,   to_name)
-
-        net_name = f"Net-{re.sub(r'[^A-Za-z0-9_]', '_', from_name)}_to_{re.sub(r'[^A-Za-z0-9_]', '_', to_name)}"
-        if   "gnd"   in from_name.lower() or "ground" in from_name.lower(): net_name = "GND"
-        elif "gnd"   in to_name.lower()   or "ground" in to_name.lower():   net_name = "GND"
-        elif "vcc"   in from_name.lower() or "5v"     in from_name.lower() or "power" in from_name.lower(): net_name = "VCC_5V"
-        elif "3.3"   in from_name         or "3v3"    in from_name.lower(): net_name = "VCC_3V3"
-
-        if net_name not in net_map: net_map[net_name] = []
-        net_map[net_name].append((from_ref, get_pin(from_ref)))
-        net_map[net_name].append((to_ref,   get_pin(to_ref)))
-
-    return net_map
-
-
-def generate_kicad_netlist_content(data):
-    """Generates KiCad .net file content as a string."""
-    components  = data.get("components",  [])
-    connections = data.get("connections", [])
-    title       = data.get("title", "PCB_Project")
-
-    lines = [
-        "(export (version D)",
-        "  (design",
-        f"    (source {title}.sch)",
-        f"    (date \"{datetime.now().strftime('%Y-%m-%d')}\")",
-        "    (tool \"Kevin the Wizard - PCB Co-Pilot AI\"))",
-        "  (components",
-    ]
-
-    for comp in components:
-        lib, part, footprint = get_footprint(comp["name"], comp.get("type", "Default"))
-        lines += [
-            f"    (comp (ref {comp['id']})",
-            f"      (value {comp['name']})",
-            f"      (libsource (lib {lib}) (part {part}))",
-            f"      (footprint {footprint}))",
-        ]
-
-    lines += [
-        "    (comp (ref PWR_GND)",
-        "      (value GND)",
-        "      (libsource (lib power) (part GND))",
-        "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
-        "    (comp (ref PWR_VCC)",
-        "      (value VCC)",
-        "      (libsource (lib power) (part VCC))",
-        "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
-        "  )",
-        "  (nets",
-    ]
-
-    net_map = build_net_map(connections, components)
-    if "GND"    not in net_map: net_map["GND"]    = []
-    if "VCC_5V" not in net_map: net_map["VCC_5V"] = []
-    net_map["GND"].append(("PWR_GND", 1))
-    net_map["VCC_5V"].append(("PWR_VCC", 1))
-
-    for code, (net_name, nodes) in enumerate(net_map.items(), start=1):
-        lines.append(f"    (net (code {code}) (name \"{net_name}\")")
-        seen = set()
-        for ref, pin in nodes:
-            if (ref, pin) not in seen:
-                seen.add((ref, pin))
-                lines.append(f"      (node (ref {ref}) (pin {pin}))")
-        lines.append("    )")
-
-    lines += ["  )", ")"]
-    return "\n".join(lines)
-
-
 # ==============================================================
 #  HELPERS
 # ==============================================================
@@ -201,6 +160,19 @@ def gemini_call_with_retry(model, prompt, max_retries=3):
             else:
                 raise e
     raise Exception(f"Gemini call failed after {max_retries} retries.")
+
+
+def validate_request(user_request):
+    try:
+        response = gemini_call_with_retry(
+            validation_model,
+            f"Evaluate this circuit request for feasibility: {user_request}"
+        )
+        raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+        result = json.loads(raw)
+        return result.get("feasible", True), result.get("reason", ""), result.get("suggestions", [])
+    except Exception:
+        return True, "", []
 
 
 def generate_circuit_json(user_request):
@@ -229,7 +201,6 @@ def auto_fix_fails(data, results):
     fails = [r for r in results if r["status"] == "FAIL"]
     if not fails:
         return data, []
-
     fix_model = genai.GenerativeModel(
         model_name="gemini-3.1-flash-lite-preview",
         system_instruction="""
@@ -266,39 +237,44 @@ def fetch_component_gemini(name):
 
 
 def generate_safety_report_txt(results, data, fix_log):
-    lines = []
-    lines.append("=" * 60)
-    lines.append("  KEVIN THE WIZARD'S ELECTRICAL SAFETY REPORT")
-    lines.append("  Generated: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    lines.append("=" * 60)
-    lines.append("")
-    lines.append("COMPONENTS FOUND:")
+    lines = ["=" * 60, "  KEVIN THE WIZARD'S ELECTRICAL SAFETY REPORT",
+             "  Generated: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "=" * 60, "",
+             "COMPONENTS FOUND:"]
     for c in data.get("components", []):
         lines.append(f"  - {c['name']} ({c.get('type','?')}) - {c.get('voltage','?')}V")
-    lines.append("")
-    lines.append("CONNECTIONS:")
+    lines += ["", "CONNECTIONS:"]
     for conn in data.get("connections", []):
         lines.append(f"  {conn['from']}  -->  {conn['to']}")
     if fix_log:
-        lines.append("")
-        lines.append("AUTO-FIXES APPLIED:")
+        lines += ["", "AUTO-FIXES APPLIED:"]
         for i, fix in enumerate(fix_log, 1):
             lines.append(f"  {i}. {fix}")
-    lines.append("")
-    lines.append("-" * 60)
-    lines.append("FINAL SAFETY CHECK RESULTS:")
-    lines.append("-" * 60)
+    pin_assignments = data.get("pin_assignments", [])
+    if pin_assignments:
+        lines += ["", "-" * 60, "PIN ASSIGNMENTS:", "-" * 60]
+        for mcu in pin_assignments:
+            lines.append(f"\n  {mcu.get('component_name', mcu.get('component_id','?'))} ({mcu.get('component_id','')}):")
+            lines.append(f"  {'PIN':<12} {'NAME':<12} {'SIGNAL':<20} {'CONNECTED TO':<25} PERIPHERAL")
+            lines.append(f"  {'-'*12} {'-'*12} {'-'*20} {'-'*25} {'-'*12}")
+            for p in mcu.get("pins", []):
+                lines.append(f"  {str(p.get('pin_number','')):<12} {str(p.get('pin_name','')):<12} {str(p.get('signal','')):<20} {str(p.get('connected_to','')):<25} {p.get('peripheral','')}")
+        conflicts = data.get("conflicts", [])
+        if conflicts:
+            lines += ["", "  WARNING - PERIPHERAL CONFLICTS DETECTED:"]
+            for c in conflicts: lines.append(f"    - {c}")
+        else:
+            lines.append("\n  OK - No peripheral conflicts detected.")
+
+    lines += ["", "-" * 60, "FINAL SAFETY CHECK RESULTS:", "-" * 60]
     pass_count = fail_count = 0
     for r in results:
-        lines.append(f"\n[{r['status']}]  {r['check']}")
-        lines.append(f"   -> {r['detail']}")
+        lines += [f"\n[{r['status']}]  {r['check']}", f"   -> {r['detail']}"]
         if r["status"] == "PASS": pass_count += 1
         elif r["status"] == "FAIL": fail_count += 1
-    lines.append("")
-    lines.append("=" * 60)
-    lines.append(f"  SUMMARY: {pass_count} passed, {fail_count} failed, {len(results)-pass_count-fail_count} warnings/skipped")
-    lines.append("  OVERALL: " + ("DESIGN LOOKS SAFE TO PROCEED!" if fail_count == 0 else f"{fail_count} ISSUE(S) NEED FIXING."))
-    lines.append("=" * 60)
+    lines += ["", "=" * 60,
+              f"  SUMMARY: {pass_count} passed, {fail_count} failed, {len(results)-pass_count-fail_count} warnings/skipped",
+              "  OVERALL: " + ("DESIGN LOOKS SAFE TO PROCEED!" if fail_count == 0 else f"{fail_count} ISSUE(S) NEED FIXING."),
+              "=" * 60]
     return "\n".join(lines)
 
 
@@ -316,14 +292,9 @@ def generate_bom_csv_content(data):
     names = [c["name"] for c in data.get("components", [])]
     enriched = []
     for name in names:
-        if name in COMPONENTS:
-            row = COMPONENTS[name].copy()
-            row["name"] = name
-        else:
-            row = fetch_component_gemini(name)
-            row["name"] = name
+        row = COMPONENTS[name].copy() if name in COMPONENTS else fetch_component_gemini(name)
+        row["name"] = name
         enriched.append(row)
-
     lines = ["name,part_number,voltage,price_usd,package,in_stock,digikey_url"]
     for c in enriched:
         lines.append(f"{c.get('name','')},{c.get('part_number','')},{c.get('voltage','')},{c.get('price_usd','')},{c.get('package','')},{c.get('in_stock','')},{c.get('digikey_url','')}")
@@ -332,8 +303,205 @@ def generate_bom_csv_content(data):
     return "\n".join(lines)
 
 
+def generate_kicad_sch_content(data):
+    """
+    Generates a KiCad 6/7 schematic file (.kicad_sch) from circuit data.
+    Places components on a grid and draws wire connections between them.
+    """
+    components  = data.get("components", [])
+    connections = data.get("connections", [])
+    pin_assignments = data.get("pin_assignments", [])
+    title       = data.get("title", "Kevin_Wizard_PCB")
+    now         = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Build a position grid: spread components across a 200x200 mil grid
+    COLS = 4
+    GRID = 50  # spacing in mm
+    comp_positions = {}
+    for i, comp in enumerate(components):
+        col = i % COLS
+        row = i // COLS
+        comp_positions[comp["id"]] = (col * GRID, row * GRID)
+
+    # Map component names to IDs for connection wiring
+    name_to_id = {c["name"]: c["id"] for c in components}
+
+    lines = [
+        '(kicad_sch (version 20230121) (generator kevin_wizard)',
+        '',
+        '  (paper "A4")',
+        '',
+        f'  (title_block',
+        f'    (title "{title}")',
+        f'    (date "{now}")',
+        f'    (rev "1.0")',
+        f'    (company "Kevin the Wizard - AI PCB Co-Pilot")',
+        f'  )',
+        '',
+        '  (lib_symbols)',
+        '',
+    ]
+
+    # Write each component as a schematic symbol
+    for comp in components:
+        cid  = comp["id"]
+        name = comp["name"]
+        ctype = comp.get("type", "Generic")
+        volt  = comp.get("voltage", 0)
+        x, y  = comp_positions.get(cid, (0, 0))
+        lib, part, fp = get_footprint(name, ctype)
+
+        lines += [
+            f'  (symbol (lib_id "{lib}:{part}")',
+            f'    (at {x} {y} 0)',
+            f'    (unit 1)',
+            f'    (in_bom yes) (on_board yes)',
+            f'    (property "Reference" "{cid}" (at {x} {y - 3} 0))',
+            f'    (property "Value" "{name}" (at {x} {y + 3} 0))',
+            f'    (property "Footprint" "{fp}" (at {x} {y + 6} 0))',
+            f'    (property "Description" "{ctype} - {volt}V" (at {x} {y + 9} 0))',
+            f'  )',
+            '',
+        ]
+
+    # Power symbols: GND and VCC
+    lines += [
+        '  (symbol (lib_id "power:GND")',
+        '    (at 10 10 0)',
+        '    (unit 1)',
+        '    (in_bom yes) (on_board yes)',
+        '    (property "Reference" "#PWR_GND" (at 10 10 0))',
+        '    (property "Value" "GND" (at 10 13 0))',
+        '  )',
+        '',
+        '  (symbol (lib_id "power:VCC")',
+        '    (at 20 10 0)',
+        '    (unit 1)',
+        '    (in_bom yes) (on_board yes)',
+        '    (property "Reference" "#PWR_VCC" (at 20 10 0))',
+        '    (property "Value" "VCC" (at 20 7 0))',
+        '  )',
+        '',
+    ]
+
+    # Draw wires between connected components
+    lines.append('  ; === Connections ===')
+    for conn in connections:
+        from_id = name_to_id.get(conn["from"], conn["from"])
+        to_id   = name_to_id.get(conn["to"],   conn["to"])
+        fx, fy  = comp_positions.get(from_id, (0, 0))
+        tx, ty  = comp_positions.get(to_id,   (0, 0))
+        signal  = conn.get("signal", "")
+        lines += [
+            f'  (wire',
+            f'    (pts (xy {fx + 5} {fy}) (xy {tx - 5} {ty}))',
+            f'    (stroke (width 0) (type default))',
+            f'  )',
+        ]
+        if signal:
+            mid_x = (fx + tx) / 2
+            mid_y = (fy + ty) / 2
+            lines += [
+                f'  (label "{signal}"',
+                f'    (at {mid_x} {mid_y} 0)',
+                f'    (fields_autoplaced)',
+                f'    (effects (font (size 1.27 1.27)))',
+                f'  )',
+            ]
+
+    # Add pin assignment labels for MCUs
+    if pin_assignments:
+        lines.append('')
+        lines.append('  ; === Pin Assignment Labels ===')
+        for mcu in pin_assignments:
+            cid  = mcu.get("component_id", "U1")
+            x, y = comp_positions.get(cid, (0, 0))
+            for idx, pin in enumerate(mcu.get("pins", [])):
+                label = f"{pin.get('pin_number','')}:{pin.get('signal','')}"
+                lines += [
+                    f'  (label "{label}"',
+                    f'    (at {x + 8} {y + idx * 2.5} 0)',
+                    f'    (effects (font (size 1.0 1.0)))',
+                    f'  )',
+                ]
+
+    lines.append(')')
+    return "\n".join(lines)
+
+
+def get_footprint(name, comp_type):
+    clean = name.replace(" ", "-")
+    if clean in FOOTPRINT_MAP: return FOOTPRINT_MAP[clean]
+    if name  in FOOTPRINT_MAP: return FOOTPRINT_MAP[name]
+    for key in FOOTPRINT_MAP:
+        if key.startswith("__"): continue
+        if key.lower() in name.lower() or name.lower() in key.lower():
+            return FOOTPRINT_MAP[key]
+    type_key = f"__{comp_type}__"
+    if type_key in FOOTPRINT_MAP: return FOOTPRINT_MAP[type_key]
+    return FOOTPRINT_MAP["__Default__"]
+
+
+def build_net_map(connections, components):
+    name_to_id  = {c["name"]: c["id"] for c in components}
+    net_map     = {}
+    pin_counter = {}
+    def get_pin(ref):
+        pin_counter[ref] = pin_counter.get(ref, 0) + 1
+        return pin_counter[ref]
+    for conn in connections:
+        fn, tn = conn["from"], conn["to"]
+        fr, tr = name_to_id.get(fn, fn), name_to_id.get(tn, tn)
+        net = f"Net-{re.sub(r'[^A-Za-z0-9_]','_',fn)}_to_{re.sub(r'[^A-Za-z0-9_]','_',tn)}"
+        if   "gnd" in fn.lower() or "ground" in fn.lower(): net = "GND"
+        elif "gnd" in tn.lower() or "ground" in tn.lower(): net = "GND"
+        elif "vcc" in fn.lower() or "5v" in fn.lower() or "power" in fn.lower(): net = "VCC_5V"
+        elif "3.3" in fn or "3v3" in fn.lower(): net = "VCC_3V3"
+        if net not in net_map: net_map[net] = []
+        net_map[net].append((fr, get_pin(fr)))
+        net_map[net].append((tr, get_pin(tr)))
+    return net_map
+
+
+def generate_kicad_netlist_content(data):
+    components  = data.get("components", [])
+    connections = data.get("connections", [])
+    title       = data.get("title", "PCB_Project")
+    lines = ["(export (version D)", "  (design",
+             f"    (source {title}.sch)",
+             f"    (date \"{datetime.now().strftime('%Y-%m-%d')}\")",
+             "    (tool \"Kevin the Wizard - PCB Co-Pilot AI\"))",
+             "  (components"]
+    for comp in components:
+        lib, part, fp = get_footprint(comp["name"], comp.get("type", "Default"))
+        lines += [f"    (comp (ref {comp['id']})", f"      (value {comp['name']})",
+                  f"      (libsource (lib {lib}) (part {part}))", f"      (footprint {fp}))"]
+    lines += ["    (comp (ref PWR_GND)", "      (value GND)",
+              "      (libsource (lib power) (part GND))",
+              "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
+              "    (comp (ref PWR_VCC)", "      (value VCC)",
+              "      (libsource (lib power) (part VCC))",
+              "      (footprint TestPoint:TestPoint_Pad_1.0x1.0mm))",
+              "  )", "  (nets"]
+    net_map = build_net_map(connections, components)
+    if "GND"    not in net_map: net_map["GND"] = []
+    if "VCC_5V" not in net_map: net_map["VCC_5V"] = []
+    net_map["GND"].append(("PWR_GND", 1))
+    net_map["VCC_5V"].append(("PWR_VCC", 1))
+    for code, (net_name, nodes) in enumerate(net_map.items(), start=1):
+        lines.append(f"    (net (code {code}) (name \"{net_name}\")")
+        seen = set()
+        for ref, pin in nodes:
+            if (ref, pin) not in seen:
+                seen.add((ref, pin))
+                lines.append(f"      (node (ref {ref}) (pin {pin}))")
+        lines.append("    )")
+    lines += ["  )", ")"]
+    return "\n".join(lines)
+
+
 # ==============================================================
-#  MAIN ROUTE
+#  ROUTES
 # ==============================================================
 @app.route("/generate", methods=["POST"])
 def generate():
@@ -343,13 +511,22 @@ def generate():
         if not user_request:
             return jsonify({"error": "No circuit description provided."}), 400
 
+        # Step 0: Validate feasibility BEFORE doing anything
+        is_feasible, reason, suggestions = validate_request(user_request)
+        if not is_feasible:
+            return jsonify({
+                "error": "impossible_request",
+                "message": reason,
+                "suggestions": suggestions
+            }), 422
+
         MAX_FIX_ROUNDS = 4
         all_fixes = []
 
         # Step 1: Generate circuit JSON
         data = generate_circuit_json(user_request)
 
-        # Step 2: Smart safety checks + auto-fix loop
+        # Step 2: Safety checks + auto-fix loop
         results = run_smart_checks(data)
         fix_round = 0
         while fix_round < MAX_FIX_ROUNDS:
@@ -362,19 +539,21 @@ def generate():
             results = run_smart_checks(data)
 
         # Step 3: Generate all output files
-        report_txt  = generate_safety_report_txt(results, data, all_fixes)
-        diagram_md  = generate_mermaid_md(data)
-        bom_csv     = generate_bom_csv_content(data)
-        kicad_net   = generate_kicad_netlist_content(data)   # ← NEW
+        report_txt = generate_safety_report_txt(results, data, all_fixes)
+        diagram_md = generate_mermaid_md(data)
+        bom_csv    = generate_bom_csv_content(data)
+        kicad_net  = generate_kicad_netlist_content(data)
+        kicad_sch  = generate_kicad_sch_content(data)
 
-        # Step 4: Pack into ZIP (now includes design.net)
+        # Step 4: Pack into ZIP
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
         with zipfile.ZipFile(tmp.name, "w") as zf:
             zf.writestr("output.json",       json.dumps(data, indent=2))
             zf.writestr("safety_report.txt", report_txt)
             zf.writestr("diagram.md",        diagram_md)
             zf.writestr("BOM.csv",           bom_csv)
-            zf.writestr("design.net",        kicad_net)       # ← NEW
+            zf.writestr("design.net",        kicad_net)
+            zf.writestr("design.kicad_sch",  kicad_sch)
 
         return send_file(tmp.name, as_attachment=True, download_name="kevin_wizard_output.zip", mimetype="application/zip")
 
