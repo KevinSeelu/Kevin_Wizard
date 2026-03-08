@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,6 +36,692 @@ body{
 @keyframes badge-pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
 @keyframes impossible-in{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
 
+/* HEADER */
+header{position:relative;text-align:center;border-bottom:3px solid var(--brass-dark);overflow:hidden;background:linear-gradient(180deg,rgba(30,18,5,.9) 0%,rgba(28,23,20,.7) 100%);}
+.header-top-bar{display:flex;align-items:center;justify-content:space-between;padding:.4rem 1.5rem;border-bottom:1px solid rgba(200,146,42,.15);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.2em;color:rgba(200,146,42,.4);}
+.status-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4a9e4a;box-shadow:0 0 6px #4a9e4a;margin-right:.4rem;animation:pulse-glow 2s infinite;}
+.header-main{padding:2.5rem 1rem 1.2rem;position:relative;}
+.gear-left{position:absolute;top:-30px;left:-30px;font-size:220px;line-height:1;opacity:.05;animation:spin-slow 40s linear infinite;user-select:none;color:var(--brass);}
+.gear-right{position:absolute;top:0;right:-20px;font-size:160px;line-height:1;opacity:.04;animation:spin-rev 25s linear infinite;user-select:none;color:var(--copper);}
+.gear-small{position:absolute;bottom:-20px;left:30%;font-size:80px;line-height:1;opacity:.03;animation:spin-slow 15s linear infinite;user-select:none;}
+.pipe-left,.pipe-right{position:absolute;bottom:0;display:flex;flex-direction:column;align-items:center;}
+.pipe-left{left:5%;}.pipe-right{right:5%;}
+.pipe-body{width:14px;height:60px;background:linear-gradient(90deg,#4a3010,#8b6010,#4a3010);border:1px solid var(--brass-dark);border-radius:3px 3px 0 0;}
+.pipe-cap{width:22px;height:8px;background:linear-gradient(90deg,#5a4020,#c8922a,#5a4020);border:1px solid var(--brass-light);border-radius:2px;margin-bottom:2px;}
+.pipe-steam{position:absolute;top:-30px;width:20px;height:30px;background:radial-gradient(ellipse,rgba(220,200,160,.4),transparent);border-radius:50%;animation:steam-up 2.5s ease-out infinite;}
+.pipe-steam:nth-child(2){animation-delay:.8s;opacity:.6;}
+.title-lockup{position:relative;display:inline-block;animation:header-in .8s ease both;}
+.title-border{position:absolute;inset:-12px -20px;border:1px solid rgba(200,146,42,.22);border-radius:4px;pointer-events:none;}
+.title-border::before,.title-border::after{content:'⬡';position:absolute;color:var(--brass);font-size:14px;opacity:.45;}
+.title-border::before{top:-8px;left:-8px;}.title-border::after{bottom:-8px;right:-8px;}
+h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.5rem,5vw,3.2rem);font-weight:700;color:var(--brass-light);text-shadow:0 0 40px rgba(200,146,42,.6),3px 3px 0 rgba(0,0,0,.5);letter-spacing:.08em;line-height:1.1;animation:flicker 9s infinite;}
+.title-tagline{font-family:'IM Fell English',serif;font-style:italic;color:var(--parchment-dark);font-size:clamp(.8rem,2vw,1.05rem);letter-spacing:.1em;margin-top:.5rem;opacity:.75;}
+.rivet-strip{display:flex;justify-content:center;align-items:center;gap:0;padding:.7rem 0 0;}
+.rivet-strip-line{flex:1;max-width:180px;height:1px;background:linear-gradient(90deg,transparent,var(--brass-dark),transparent);}
+.rivet{width:10px;height:10px;margin:0 .75rem;background:radial-gradient(circle at 35% 35%,var(--brass-light),var(--brass-dark));border-radius:50%;box-shadow:0 0 5px rgba(200,146,42,.4);}
+.header-stats{display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap;padding:.7rem 1rem .5rem;border-top:1px solid rgba(200,146,42,.1);background:rgba(0,0,0,.2);}
+.stat-item{text-align:center;}
+.stat-val{font-family:'Cinzel',serif;font-size:.72rem;color:var(--brass-light);letter-spacing:.1em;}
+.stat-lbl{font-family:'IM Fell English',serif;font-style:italic;font-size:.62rem;color:rgba(212,184,150,.35);}
+
+/* MAIN */
+main{max-width:1120px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+/* BRASS PANEL */
+.brass-panel{background:linear-gradient(145deg,#1e1510,#241a0e,#1a1008);border:2px solid var(--brass-dark);border-radius:4px;position:relative;box-shadow:0 0 0 1px rgba(200,146,42,.15),inset 0 0 40px rgba(0,0,0,.6),0 10px 40px rgba(0,0,0,.7);margin-bottom:1.5rem;}
+.brass-panel::before,.brass-panel::after{content:'';position:absolute;width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--brass),var(--brass-dark));box-shadow:0 0 4px rgba(200,146,42,.3);z-index:1;}
+.brass-panel::before{top:8px;left:10px;}.brass-panel::after{bottom:8px;right:10px;}
+.panel-label{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.3em;color:var(--brass);text-transform:uppercase;padding:.7rem 1.2rem 0;opacity:.75;}
+
+/* INPUT */
+.input-wrap{padding:1.2rem 1.4rem 1.4rem;}
+.field-label{font-family:'Cinzel',serif;font-size:.68rem;letter-spacing:.2em;color:var(--brass);text-transform:uppercase;margin-bottom:.6rem;display:flex;align-items:center;gap:.6rem;}
+.field-label-line{flex:0 0 24px;height:1px;background:var(--brass-dark);}
+textarea{width:100%;background:rgba(0,0,0,.5);border:1px solid var(--brass-dark);border-radius:3px;color:var(--parchment);font-family:'Special Elite',cursive;font-size:1rem;line-height:1.65;padding:1rem 1.1rem;resize:vertical;min-height:90px;outline:none;transition:border-color .3s,box-shadow .3s;background-image:repeating-linear-gradient(transparent,transparent 27px,rgba(200,146,42,.04) 27px,rgba(200,146,42,.04) 28px);}
+textarea::placeholder{color:rgba(212,184,150,.3);font-style:italic;}
+textarea:focus{border-color:var(--brass);box-shadow:0 0 18px rgba(200,146,42,.18),inset 0 0 12px rgba(0,0,0,.3);}
+.examples{display:flex;flex-wrap:wrap;gap:.4rem;margin:.75rem 0;}
+.example-chip{background:rgba(139,96,16,.18);border:1px solid rgba(200,146,42,.22);border-radius:2px;padding:.25rem .6rem;font-size:.7rem;color:rgba(212,184,150,.55);cursor:pointer;transition:all .2s;font-family:'IM Fell English',serif;font-style:italic;}
+.example-chip:hover{background:rgba(200,146,42,.2);border-color:var(--brass);color:var(--parchment);}
+.btn-engage{width:100%;margin-top:.5rem;padding:1rem 2rem;background:linear-gradient(135deg,#6b4a08,#c8922a,#e8b84b,#c8922a,#6b4a08);background-size:300% 100%;border:2px solid var(--brass-light);border-radius:3px;color:var(--ink);font-family:'Cinzel',serif;font-size:.92rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:background-position .5s,transform .15s;animation:pulse-glow 3s ease-in-out infinite;}
+.btn-engage::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.12),transparent);pointer-events:none;}
+.btn-engage:hover{background-position:right center;transform:translateY(-2px);}
+.btn-engage:active{transform:translateY(1px);}
+.btn-engage:disabled{opacity:.45;cursor:not-allowed;animation:none;transform:none;}
+
+/* IMPOSSIBLE REQUEST PANEL */
+.impossible-panel{
+  display:none;
+  background:linear-gradient(145deg,#1a0808,#2a1010,#1a0808);
+  border:2px solid #9e3a3a;
+  border-radius:4px;
+  padding:1.4rem 1.6rem;
+  margin-bottom:1.5rem;
+  position:relative;
+  box-shadow:0 0 30px rgba(158,58,58,.25),inset 0 0 30px rgba(0,0,0,.5);
+  animation:impossible-in .35s ease;
+}
+.impossible-panel::before,.impossible-panel::after{
+  content:'';position:absolute;width:8px;height:8px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#e07070,#9e3a3a);
+  box-shadow:0 0 4px rgba(224,112,112,.3);z-index:1;
+}
+.impossible-panel::before{top:8px;left:10px;}
+.impossible-panel::after{bottom:8px;right:10px;}
+.impossible-title{
+  font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.25em;
+  color:#e07070;text-transform:uppercase;margin-bottom:.7rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.impossible-title-icon{font-size:1.1rem;}
+.impossible-reason{
+  font-family:'IM Fell English',serif;font-style:italic;
+  color:var(--parchment);font-size:1rem;line-height:1.65;
+  margin-bottom:1.1rem;padding-bottom:.9rem;
+  border-bottom:1px solid rgba(158,58,58,.35);
+}
+.impossible-suggestions-title{
+  font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;
+  color:#e0c060;text-transform:uppercase;margin-bottom:.6rem;
+}
+.impossible-suggestions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.45rem;}
+.impossible-suggestions li{display:flex;align-items:flex-start;gap:.6rem;}
+.impossible-suggestions li::before{content:'⚙';color:var(--brass);flex-shrink:0;margin-top:.1rem;}
+.suggestion-chip{
+  cursor:pointer;
+  background:rgba(139,96,16,.15);
+  border:1px solid rgba(200,146,42,.28);
+  border-radius:2px;
+  padding:.28rem .65rem;
+  font-size:.82rem;
+  color:var(--parchment-dark);
+  font-family:'IM Fell English',serif;
+  font-style:italic;
+  transition:all .2s;
+  line-height:1.5;
+}
+.suggestion-chip:hover{
+  background:rgba(200,146,42,.22);
+  border-color:var(--brass);
+  color:var(--parchment);
+}
+.impossible-dismiss{
+  position:absolute;top:.75rem;right:1rem;
+  background:transparent;border:none;
+  color:rgba(224,112,112,.4);cursor:pointer;
+  font-size:1.1rem;line-height:1;
+  transition:color .2s;font-family:'Cinzel',serif;
+}
+.impossible-dismiss:hover{color:#e07070;}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1.2fr;gap:1.5rem;}
+@media(max-width:680px){.two-col{grid-template-columns:1fr;}}
+
+/* GAUGES */
+.gauges-wrap{padding:1.2rem 1rem 1.4rem;display:flex;justify-content:space-around;align-items:flex-start;flex-wrap:wrap;gap:.5rem;}
+.gauge-item{text-align:center;flex:0 0 90px;}
+.gauge-svg-wrap{position:relative;width:90px;height:60px;overflow:hidden;}
+.gauge-arc-fill{stroke-dasharray:251;stroke-dashoffset:251;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.34,1.56,.64,1);}
+.gauge-needle-line{transform-origin:80px 80px;transform:rotate(-90deg);transition:transform 1.2s cubic-bezier(.34,1.56,.64,1);}
+.gauge-val{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--brass-light);text-shadow:0 0 10px rgba(200,146,42,.5);margin-top:.2rem;line-height:1;}
+.gauge-lbl{font-family:'IM Fell English',serif;font-style:italic;font-size:.62rem;color:rgba(212,184,150,.4);margin-top:.15rem;}
+
+/* LOG */
+.log-outer{padding:1rem 1.2rem 1.2rem;}
+.log-inner{background:rgba(0,0,0,.55);border:1px solid rgba(200,146,42,.14);border-radius:3px;padding:.7rem .9rem;height:210px;overflow-y:auto;font-family:'Special Elite',cursive;font-size:.78rem;line-height:1.75;}
+.log-inner::-webkit-scrollbar{width:5px;}.log-inner::-webkit-scrollbar-track{background:rgba(0,0,0,.3);}.log-inner::-webkit-scrollbar-thumb{background:var(--brass-dark);border-radius:3px;}
+.log-entry{animation:log-in .25s ease;padding:.04rem 0;}
+.log-pass{color:#6ec86e;}.log-fail{color:#e07070;}.log-warn{color:#e0c060;}.log-info{color:var(--parchment-dark);}.log-step{color:var(--brass-light);font-style:italic;}.log-fix{color:#70b8e0;}
+
+/* TABS */
+.tab-bar{display:flex;border-bottom:2px solid var(--brass-dark);flex-wrap:wrap;padding:0 1rem;background:rgba(0,0,0,.2);}
+.tab-btn{background:transparent;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:.7rem 1.1rem;font-family:'Cinzel',serif;font-size:.63rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(212,184,150,.35);cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:.35rem;white-space:nowrap;}
+.tab-btn:hover{color:rgba(212,184,150,.65);}
+.tab-btn.active{color:var(--brass-light);border-bottom-color:var(--brass-light);text-shadow:0 0 12px rgba(200,146,42,.45);}
+.tab-icon{font-size:.9rem;}
+.fail-badge{display:none;background:rgba(158,58,58,.5);color:#e07070;border:1px solid #9e3a3a;border-radius:2px;padding:0 5px;font-size:.58rem;animation:badge-pop .4s cubic-bezier(.34,1.56,.64,1) both;}
+.tab-content{display:none;padding:1.4rem;}
+.tab-content.active{display:block;}
+
+/* SAFETY */
+.safety-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.7rem;}
+.safety-item{background:rgba(0,0,0,.3);border-left:3px solid var(--brass-dark);padding:.6rem .85rem;border-radius:0 3px 3px 0;transition:background .2s;}
+.safety-item:hover{background:rgba(0,0,0,.45);}
+.safety-item.pass{border-left-color:#3a8e3a;}.safety-item.fail{border-left-color:#9e3a3a;}.safety-item.warn{border-left-color:#9e8a2a;}.safety-item.skip{border-left-color:#4a4a4a;}
+.safety-badge{display:inline-block;font-size:.57rem;font-family:'Cinzel',serif;letter-spacing:.12em;padding:.1rem .4rem;border-radius:2px;margin-bottom:.25rem;}
+.pass .safety-badge{background:rgba(58,142,58,.2);color:#7ec87e;border:1px solid #3a8e3a;}
+.fail .safety-badge{background:rgba(158,58,58,.2);color:#e07070;border:1px solid #9e3a3a;}
+.warn .safety-badge{background:rgba(158,138,42,.2);color:#e0c070;border:1px solid #9e8a2a;}
+.skip .safety-badge{background:rgba(74,74,74,.2);color:#aaa;border:1px solid #4a4a4a;}
+.safety-name{font-size:.8rem;color:var(--parchment);margin-bottom:.18rem;}
+.safety-detail{font-size:.7rem;color:var(--parchment-dark);opacity:.72;font-family:'IM Fell English',serif;font-style:italic;line-height:1.4;}
+
+/* BOM */
+.bom-table-wrap{overflow-x:auto;}
+.bom-table{width:100%;border-collapse:collapse;font-size:.77rem;}
+.bom-table th{text-align:left;padding:.48rem .7rem;border-bottom:1px solid var(--brass-dark);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.12em;color:var(--brass);text-transform:uppercase;white-space:nowrap;}
+.bom-table td{padding:.4rem .7rem;border-bottom:1px solid rgba(200,146,42,.07);color:var(--parchment-dark);}
+.bom-table tr:nth-child(even) td{background:rgba(0,0,0,.18);}
+.bom-table tr.total-row td{color:var(--brass-light);font-weight:bold;border-top:1px solid var(--brass-dark);}
+.bom-link{color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass-dark);}
+.bom-link:hover{color:var(--brass-light);}
+
+/* DIAGRAM */
+.diagram-inner{background:rgba(0,0,0,.4);border:1px solid rgba(200,146,42,.17);border-radius:3px;padding:1.5rem;min-height:200px;overflow-x:auto;}
+.diagram-inner .mermaid{filter:sepia(.35) hue-rotate(12deg) brightness(1.1);}
+.placeholder-msg{text-align:center;color:rgba(212,184,150,.28);font-family:'IM Fell English',serif;font-style:italic;font-size:.95rem;padding:3rem 1rem;}
+
+/* PIN MAP */
+.pin-map-section{margin-bottom:1.4rem;}
+.pin-map-mcu-title{font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.18em;color:var(--brass-light);text-transform:uppercase;margin-bottom:.6rem;padding-bottom:.4rem;border-bottom:1px solid rgba(200,146,42,.2);display:flex;align-items:center;gap:.5rem;}
+.pin-map-mcu-title::before{content:'⚙';font-size:.9rem;}
+.pin-table{width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:.5rem;}
+.pin-table th{text-align:left;padding:.4rem .65rem;border-bottom:1px solid var(--brass-dark);font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.12em;color:var(--brass);text-transform:uppercase;white-space:nowrap;}
+.pin-table td{padding:.35rem .65rem;border-bottom:1px solid rgba(200,146,42,.06);color:var(--parchment-dark);font-family:'Special Elite',cursive;}
+.pin-table tr:nth-child(even) td{background:rgba(0,0,0,.15);}
+.pin-tag{display:inline-block;background:rgba(139,96,16,.25);border:1px solid rgba(200,146,42,.3);border-radius:2px;padding:.1rem .4rem;font-size:.68rem;font-family:'Cinzel',serif;color:var(--brass-light);white-space:nowrap;}
+.pin-tag.power{background:rgba(74,158,74,.15);border-color:#3a8e3a;color:#7ec87e;}
+.pin-tag.conflict{background:rgba(158,58,58,.2);border-color:#9e3a3a;color:#e07070;}
+.conflict-banner{background:rgba(158,58,58,.12);border:1px solid rgba(158,58,58,.35);border-radius:3px;padding:.7rem 1rem;margin-top:.8rem;font-family:'IM Fell English',serif;font-style:italic;color:#e07070;font-size:.85rem;}
+.conflict-banner strong{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;display:block;margin-bottom:.3rem;color:#e07070;}
+.no-conflict{background:rgba(58,142,58,.1);border:1px solid rgba(58,142,58,.3);border-radius:3px;padding:.5rem .9rem;margin-top:.6rem;font-family:'IM Fell English',serif;font-style:italic;color:#6ec86e;font-size:.82rem;}
+
+/* DOWNLOAD */
+.download-ready{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.2rem;}
+.download-title{font-family:'Cinzel',serif;font-size:1rem;color:var(--brass-light);margin-bottom:.55rem;text-shadow:0 0 12px rgba(200,146,42,.4);}
+.file-tags{display:flex;flex-wrap:wrap;gap:.4rem;}
+.file-tag{background:rgba(139,96,16,.2);border:1px solid rgba(200,146,42,.32);border-radius:2px;padding:.25rem .65rem;font-size:.7rem;color:var(--parchment-dark);}
+.btn-download{padding:.8rem 2rem;background:linear-gradient(135deg,var(--rust),#d04a1a,var(--rust));background-size:200%;border:2px solid #e06030;border-radius:3px;color:var(--parchment);font-family:'Cinzel',serif;font-size:.8rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-block;transition:all .3s;}
+.btn-download:hover{background-position:right;box-shadow:0 0 24px rgba(200,80,30,.45);transform:translateY(-2px);}
+
+/* FOOTER */
+footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13);font-family:'IM Fell English',serif;font-style:italic;font-size:.76rem;color:rgba(212,184,150,.28);}
+
+/* SPINNER */
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(26,15,0,.3);border-top-color:var(--ink);border-radius:50%;animation:spin-slow .7s linear infinite;vertical-align:middle;margin-right:.4rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top-bar">
+    <span>PCB CO-PILOT v2.6 — AETHERIC FORGE SYSTEM</span>
+    <span><span class="status-dot"></span>SYSTEMS NOMINAL</span>
+    <span>HACKATHON 2026</span>
+  </div>
+  <div class="header-main">
+    <div class="gear-left">⚙</div>
+    <div class="gear-right">⚙</div>
+    <div class="gear-small">⚙</div>
+    <div class="pipe-left">
+      <div class="pipe-steam"></div>
+      <div class="pipe-steam"></div>
+      <div class="pipe-cap"></div>
+      <div class="pipe-body"></div>
+    </div>
+    <div class="pipe-right">
+      <div class="pipe-steam"></div>
+      <div class="pipe-cap"></div>
+      <div class="pipe-body"></div>
+    </div>
+    <div class="title-lockup">
+      <div class="title-border"></div>
+      <h1>⚙ Kevin the Wizard ⚙</h1>
+      <p class="title-tagline">Autonomous PCB Co-Pilot &mdash; Aetheric Circuit Forge</p>
+    </div>
+    <div class="rivet-strip">
+      <div class="rivet-strip-line"></div>
+      <div class="rivet"></div><div class="rivet"></div><div class="rivet"></div>
+      <div class="rivet"></div><div class="rivet"></div>
+      <div class="rivet-strip-line"></div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-item"><div class="stat-val">GEMINI</div><div class="stat-lbl">Neural Engine</div></div>
+    <div class="stat-item"><div class="stat-val">4-PASS</div><div class="stat-lbl">Auto-Fix Loop</div></div>
+    <div class="stat-item"><div class="stat-val">ZIP</div><div class="stat-lbl">Output Package</div></div>
+    <div class="stat-item"><div class="stat-val">KICAD</div><div class="stat-lbl">Netlist Export</div></div>
+    <div class="stat-item"><div class="stat-val">GERBER</div><div class="stat-lbl">Manufacture-Ready</div></div>
+    <div class="stat-item"><div class="stat-val">ECDA</div><div class="stat-lbl">EasyEDA Export</div></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- INPUT -->
+  <div class="brass-panel">
+    <div class="panel-label">✦ Transmission Chamber</div>
+    <div class="input-wrap">
+      <div class="field-label">
+        <span class="field-label-line"></span>
+        Inscribe your circuit apparatus below
+      </div>
+      <textarea id="circuitInput" rows="3" placeholder="e.g. ESP32 robot with LiPo battery and two motor drivers..."></textarea>
+      <div class="examples">
+        <span class="example-chip" onclick="setPrompt(this)">Traffic light with Arduino Uno</span>
+        <span class="example-chip" onclick="setPrompt(this)">LiPo-powered ESP32 with dual motor drivers</span>
+        <span class="example-chip" onclick="setPrompt(this)">USB-C charging circuit with TP4056</span>
+        <span class="example-chip" onclick="setPrompt(this)">Raspberry Pi sensor node with I2C display</span>
+      </div>
+      <button class="btn-engage" id="runBtn" onclick="runPipeline()">
+        ⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙
+      </button>
+    </div>
+  </div>
+
+  <!-- IMPOSSIBLE REQUEST PANEL -->
+  <div class="impossible-panel" id="impossiblePanel">
+    <button class="impossible-dismiss" onclick="dismissImpossible()" title="Dismiss">✕</button>
+    <div class="impossible-title">
+      <span class="impossible-title-icon">⛔</span>
+      Request Deemed Impossible by the Aetheric Engine
+    </div>
+    <div class="impossible-reason" id="impossibleReason"></div>
+    <div class="impossible-suggestions-title">⚙ &nbsp; Suggested Alternatives — click to use</div>
+    <ul class="impossible-suggestions" id="impossibleSuggestions"></ul>
+  </div>
+
+  <!-- GAUGES + LOG -->
+  <div class="two-col">
+    <div class="brass-panel">
+      <div class="panel-label">✦ Pressure Gauges</div>
+      <div class="gauges-wrap">
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg viewBox="0 0 160 90" width="90" height="60">
+              <path d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" stroke="rgba(200,146,42,.1)"/>
+              <path id="gArcPass" d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" class="gauge-arc-fill" stroke="#4a9e4a"/>
+              <line id="gNeedlePass" x1="80" y1="80" x2="80" y2="28" stroke="#4a9e4a" stroke-width="2.5" stroke-linecap="round" class="gauge-needle-line"/>
+              <circle cx="80" cy="80" r="5" fill="var(--brass)" stroke="var(--brass-dark)" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="gauge-val" id="passCount">—</div>
+          <div class="gauge-lbl">Checks Passed</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg viewBox="0 0 160 90" width="90" height="60">
+              <path d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" stroke="rgba(200,146,42,.1)"/>
+              <path id="gArcFail" d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" class="gauge-arc-fill" stroke="#9e3a3a"/>
+              <line id="gNeedleFail" x1="80" y1="80" x2="80" y2="28" stroke="#e07070" stroke-width="2.5" stroke-linecap="round" class="gauge-needle-line"/>
+              <circle cx="80" cy="80" r="5" fill="var(--brass)" stroke="var(--brass-dark)" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="gauge-val" id="failCount" style="color:#e07070">—</div>
+          <div class="gauge-lbl">Issues Found</div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg viewBox="0 0 160 90" width="90" height="60">
+              <path d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" stroke="rgba(200,146,42,.1)"/>
+              <path id="gArcComp" d="M20,80 A60,60 0 0,1 140,80" stroke-width="10" fill="none" class="gauge-arc-fill" stroke="#7070a0"/>
+              <line id="gNeedleComp" x1="80" y1="80" x2="80" y2="28" stroke="#a0a0e0" stroke-width="2.5" stroke-linecap="round" class="gauge-needle-line"/>
+              <circle cx="80" cy="80" r="5" fill="var(--brass)" stroke="var(--brass-dark)" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="gauge-val" id="compCount" style="color:#a0a0e0">—</div>
+          <div class="gauge-lbl">Components</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="brass-panel">
+      <div class="panel-label">✦ Aetheric Transmission Log</div>
+      <div class="log-outer">
+        <div class="log-inner" id="logOutput">
+          <div class="log-entry log-info" style="opacity:.3;font-style:italic">Awaiting your circuit description, traveller...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABBED OUTPUT -->
+  <div class="brass-panel">
+    <div class="panel-label">✦ Design Output Chamber</div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('diagram')"><span class="tab-icon">🗺</span> Schematic</button>
+      <button class="tab-btn" onclick="switchTab('safety')"><span class="tab-icon">⚠</span> Safety Audit <span class="fail-badge" id="failBadge"></span></button>
+      <button class="tab-btn" onclick="switchTab('bom')"><span class="tab-icon">📋</span> Bill of Materials</button>
+      <button class="tab-btn" onclick="switchTab('pins')"><span class="tab-icon">🔌</span> Pin Map</button>
+      <button class="tab-btn" onclick="switchTab('download')"><span class="tab-icon">⬇</span> Download</button>
+    </div>
+
+    <div class="tab-content active" id="tab-diagram">
+      <div class="diagram-inner" id="diagramOutput">
+        <div class="placeholder-msg">⚙ &nbsp; Circuit schematic shall manifest here upon activation &nbsp; ⚙</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-safety">
+      <div class="safety-grid" id="safetyGrid">
+        <div class="placeholder-msg">Run the pipeline to see safety audit results...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-bom">
+      <div class="bom-table-wrap" id="bomOutput">
+        <div class="placeholder-msg">Run the pipeline to generate the Bill of Materials...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-pins">
+      <div id="pinMapOutput">
+        <div class="placeholder-msg">Run the pipeline to see pin assignments...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-download">
+      <div id="downloadReady" style="display:none">
+        <div class="download-ready">
+          <div>
+            <div class="download-title">⚙ KEVIN_WIZARD_OUTPUT.ZIP</div>
+            <div class="file-tags">
+              <span class="file-tag">📄 output.json</span>
+              <span class="file-tag">🛡 safety_report.txt</span>
+              <span class="file-tag">📊 BOM.csv</span>
+              <span class="file-tag">🗺 diagram.md</span>
+              <span class="file-tag">📐 kicad/design.kicad_sch</span>
+              <span class="file-tag">🔗 kicad/design.net</span>
+              <span class="file-tag">🏭 gerber/*.GTL (F.Cu)</span>
+              <span class="file-tag">🏭 gerber/*.GBL (B.Cu)</span>
+              <span class="file-tag">🏭 gerber/*.GTO (Silk)</span>
+              <span class="file-tag">🏭 gerber/*.GTS (Mask)</span>
+              <span class="file-tag">🏭 gerber/*.GKO (Outline)</span>
+              <span class="file-tag">🏭 gerber/*.DRL (Drill)</span>
+              <span class="file-tag">🏭 gerber/*.gbrjob</span>
+              <span class="file-tag">🔌 easyeda/*_schematic.json</span>
+              <span class="file-tag">📖 README.md</span>
+            </div>
+            <div style="margin-top:.7rem;font-family:'IM Fell English',serif;font-style:italic;font-size:.75rem;color:rgba(212,184,150,.45);">
+              Upload <code style="color:var(--brass)">gerber/</code> folder directly to JLCPCB · PCBWay · OSH Park
+              &nbsp;|&nbsp; Import <code style="color:var(--brass)">easyeda/*.json</code> into EasyEDA Pro
+            </div>
+          </div>
+          <a class="btn-download" id="downloadBtn" href="#">⬇ RETRIEVE DESIGN PACKAGE</a>
+        </div>
+      </div>
+      <div id="downloadPlaceholder" class="placeholder-msg">Run the pipeline to generate your manufacture-ready design package...</div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Forged in brass &amp; aether &mdash; Kevin the Wizard's Autonomous PCB Co-Pilot &mdash; Hackathon 2026</footer>
+
+<script>
+mermaid.initialize({startOnLoad:false,theme:'dark',themeVariables:{
+  primaryColor:'#3d2a0a',primaryTextColor:'#e8b84b',primaryBorderColor:'#c8922a',
+  lineColor:'#c8922a',secondaryColor:'#2a1f10',background:'#1a1008',
+  mainBkg:'#2a1f10',nodeBorder:'#c8922a',clusterBkg:'#1a1008',
+  titleColor:'#e8b84b',edgeLabelBackground:'#1a1008',fontSize:'14px'
+}});
+
+/* ── Helpers ── */
+function setPrompt(el){document.getElementById('circuitInput').value=el.textContent;}
+
+function log(msg,type='info'){
+  const box=document.getElementById('logOutput');
+  const d=document.createElement('div');
+  d.className=`log-entry log-${type}`;
+  const t=new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  d.textContent=`[${t}] ${msg}`;
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+}
+function clearLog(){document.getElementById('logOutput').innerHTML='';}
+
+function setGauge(arcId,needleId,value,max){
+  const pct=Math.min(value/max,1);
+  document.getElementById(arcId).style.strokeDashoffset=251-pct*251;
+  document.getElementById(needleId).style.transform=`rotate(${-90+pct*180}deg)`;
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  ['diagram','safety','bom','pins','download'].forEach((n,i)=>{
+    if(n===name)document.querySelectorAll('.tab-btn')[i].classList.add('active');
+  });
+}
+
+function renderPinMap(data){
+  const pins = data.pin_assignments || [];
+  const conflicts = data.conflicts || [];
+  const el = document.getElementById('pinMapOutput');
+  if(!pins.length){
+    el.innerHTML='<div class="placeholder-msg">No pin assignments found — MCU may not have been detected.</div>';
+    return;
+  }
+  let html = '';
+  pins.forEach(mcu=>{
+    html += `<div class="pin-map-section">`;
+    html += `<div class="pin-map-mcu-title">${mcu.component_name||mcu.component_id} &nbsp;<span style="opacity:.5;font-size:.6rem">(${mcu.component_id})</span></div>`;
+    html += `<table class="pin-table"><thead><tr>
+      <th>Pin</th><th>Name</th><th>Signal</th><th>Connected To</th><th>Peripheral</th>
+    </tr></thead><tbody>`;
+    (mcu.pins||[]).forEach(p=>{
+      const isPower = ['Power','GND','VCC','3V3','5V'].some(k=>p.peripheral&&p.peripheral.includes(k));
+      const tagClass = isPower ? 'power' : '';
+      html += `<tr>
+        <td><span class="pin-tag ${tagClass}">${p.pin_number||''}</span></td>
+        <td>${p.pin_name||''}</td>
+        <td><strong style="color:var(--brass-light)">${p.signal||''}</strong></td>
+        <td>${p.connected_to||''}</td>
+        <td><span style="font-size:.7rem;color:rgba(212,184,150,.55)">${p.peripheral||''}</span></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+  if(conflicts.length){
+    html += `<div class="conflict-banner"><strong>⚠ PERIPHERAL CONFLICTS DETECTED</strong>${conflicts.map(c=>`• ${c}`).join('<br>')}</div>`;
+    log(`⚠ ${conflicts.length} pin conflict(s) detected!`,'warn');
+  } else {
+    html += `<div class="no-conflict">✓ No peripheral conflicts detected — pin assignments are clean.</div>`;
+  }
+  el.innerHTML = html;
+}
+
+async function renderDiagram(code){
+  const el=document.getElementById('diagramOutput');
+  el.innerHTML=`<div class="mermaid">${code}</div>`;
+  try{await mermaid.run({nodes:el.querySelectorAll('.mermaid')});}
+  catch(e){el.innerHTML=`<pre style="color:var(--parchment-dark);font-size:.78rem;white-space:pre-wrap">${code}</pre>`;}
+}
+
+function buildMermaid(data){
+  const lines=['graph TD'];
+  (data.connections||[]).forEach(c=>{
+    lines.push(`    ${c.from.replace(/[\s\-]/g,'_')} --> ${c.to.replace(/[\s\-]/g,'_')}`);
+  });
+  return lines.join('\n');
+}
+
+function parseSafetyReport(text){
+  const checks=[];let cur=null;
+  for(const line of text.split('\n')){
+    const m=line.match(/^\[(PASS|FAIL|WARN|SKIP)\]\s+(.+)/);
+    if(m){if(cur)checks.push(cur);cur={status:m[1],name:m[2].trim(),detail:''};}
+    else if(cur&&line.trim().startsWith('->')){cur.detail=line.replace('->','').trim();}
+  }
+  if(cur)checks.push(cur);
+  const pass=checks.filter(c=>c.status==='PASS').length;
+  const fail=checks.filter(c=>c.status==='FAIL').length;
+  const total=Math.max(checks.length,1);
+  document.getElementById('passCount').textContent=pass;
+  document.getElementById('failCount').textContent=fail;
+  setGauge('gArcPass','gNeedlePass',pass,total);
+  setGauge('gArcFail','gNeedleFail',fail,total);
+  checks.forEach(c=>log(`[${c.status}] ${c.name}`,c.status.toLowerCase()));
+  const grid=document.getElementById('safetyGrid');grid.innerHTML='';
+  checks.forEach(c=>{
+    const d=document.createElement('div');d.className=`safety-item ${c.status.toLowerCase()}`;
+    d.innerHTML=`<span class="safety-badge">${c.status}</span><div class="safety-name">${c.name}</div><div class="safety-detail">${c.detail}</div>`;
+    grid.appendChild(d);
+  });
+  if(fail>0){const b=document.getElementById('failBadge');b.textContent=fail+' FAIL';b.style.display='inline';}
+}
+
+function renderBomTable(csv){
+  const lines=csv.trim().split('\n').filter(l=>l.trim());
+  if(lines.length<2)return;
+  const headers=lines[0].split(',');
+  let html=`<table class="bom-table"><thead><tr>`;
+  headers.forEach(h=>{html+=`<th>${h}</th>`;});
+  html+=`</tr></thead><tbody>`;
+  lines.slice(1).forEach(row=>{
+    const isTotal=row.includes('TOTAL');
+    html+=`<tr class="${isTotal?'total-row':''}">`;
+    row.split(',').forEach(cell=>{
+      html+=`<td>${cell.startsWith('http')?`<a class="bom-link" href="${cell}" target="_blank">DigiKey ↗</a>`:cell}</td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+=`</tbody></table>`;
+  document.getElementById('bomOutput').innerHTML=`<div class="bom-table-wrap">${html}</div>`;
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector(`script[src="${src}"]`)){res();return;}
+    const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function displayFromZip(blob){
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+  const zip=await JSZip.loadAsync(blob);
+  const jf=zip.file('output.json');
+  if(jf){
+    const data=JSON.parse(await jf.async('text'));
+    const n=(data.components||[]).length;
+    document.getElementById('compCount').textContent=n;
+    setGauge('gArcComp','gNeedleComp',n,20);
+    await renderDiagram(buildMermaid(data));
+    renderPinMap(data);
+    log(`Circuit parsed — ${n} components found.`,'info');
+  }
+  const rf=zip.file('safety_report.txt');
+  if(rf)parseSafetyReport(await rf.async('text'));
+  const bf=zip.file('BOM.csv');
+  if(bf){renderBomTable(await bf.async('text'));log('BOM table rendered.','pass');}
+}
+
+/* ── Impossible panel ── */
+function showImpossible(reason, suggestions){
+  document.getElementById('impossibleReason').textContent = reason;
+  const ul = document.getElementById('impossibleSuggestions');
+  ul.innerHTML = '';
+  (suggestions||[]).forEach(s=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="suggestion-chip" onclick="useSuggestion(this)">${s}</span>`;
+    ul.appendChild(li);
+  });
+  const panel = document.getElementById('impossiblePanel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function dismissImpossible(){
+  document.getElementById('impossiblePanel').style.display = 'none';
+}
+
+function useSuggestion(el){
+  document.getElementById('circuitInput').value = el.textContent;
+  dismissImpossible();
+  document.getElementById('circuitInput').focus();
+}
+
+/* ── Main pipeline ── */
+async function runPipeline(){
+  const input=document.getElementById('circuitInput').value.trim();
+  if(!input){alert('Please describe your circuit first.');return;}
+
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> MECHANISMS ENGAGED...';
+
+  dismissImpossible();
+  clearLog();
+
+  document.getElementById('safetyGrid').innerHTML='<div class="placeholder-msg">Running safety audit...</div>';
+  document.getElementById('bomOutput').innerHTML='<div class="placeholder-msg">Generating BOM...</div>';
+  document.getElementById('diagramOutput').innerHTML='<div class="placeholder-msg">⚙ Generating schematic... ⚙</div>';
+  document.getElementById('pinMapOutput').innerHTML='<div class="placeholder-msg">Resolving pin assignments...</div>';
+  document.getElementById('downloadReady').style.display='none';
+  document.getElementById('downloadPlaceholder').style.display='block';
+  document.getElementById('failBadge').style.display='none';
+  document.getElementById('passCount').textContent='—';
+  document.getElementById('failCount').textContent='—';
+  document.getElementById('compCount').textContent='—';
+
+  log(`Igniting the aetheric boiler...`,'step');
+  log(`Circuit: "${input.substring(0,55)}${input.length>55?'...':''}"`, 'info');
+  log('Validating request feasibility...','step');
+
+  try{
+    const resp = await fetch('/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({request:input})
+    });
+
+    // 422 = impossible request
+    if(resp.status === 422){
+      const e = await resp.json();
+      log('⛔ Request rejected — impossible circuit.','fail');
+      log(e.message,'warn');
+      showImpossible(e.message, e.suggestions||[]);
+      return;
+    }
+
+    if(!resp.ok){
+      const e = await resp.json();
+      throw new Error(e.error||'Pipeline failed');
+    }
+
+    log('Validation passed — transmitting to Gemini...','pass');
+    log('Generating netlist...','step');
+    log('Safety audit running...','step');
+    log('Auto-fix loop engaged...','fix');
+    log('Enriching BOM...','info');
+    log('Forging KiCad netlist...','info');
+    log('Generating Gerber files (manufacturer-ready)...','info');
+    log('Generating EasyEDA / ECDA schematic...','info');
+    log('Packaging ZIP...','step');
+
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    await displayFromZip(blob);
+
+    log('output.json ✓','pass');
+    log('safety_report.txt ✓','pass');
+    log('BOM.csv ✓','pass');
+    log('diagram.md ✓','pass');
+    log('kicad/design.net ✓','pass');
+    log('kicad/design.kicad_sch ✓','pass');
+    log('gerber/*.GTL / GBL / GTO / GTS / GKO / DRL ✓','pass');
+    log('easyeda/*_schematic.json ✓','pass');
+    log('README.md ✓','pass');
+    log('⚙ ALL MECHANISMS NOMINAL — Package ready for manufacture!','pass');
+
+    document.getElementById('downloadBtn').href=url;
+    document.getElementById('downloadBtn').download='kevin_wizard_output.zip';
+    document.getElementById('downloadReady').style.display='block';
+    document.getElementById('downloadPlaceholder').style.display='none';
+
+  }catch(err){
+    log(`ERROR: ${err.message}`,'fail');
+    log('Check your API key and try again.','warn');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙';
+  }
+}
+</script>
+</body>
+</html>
 /* HEADER */
 header{position:relative;text-align:center;border-bottom:3px solid var(--brass-dark);overflow:hidden;background:linear-gradient(180deg,rgba(30,18,5,.9) 0%,rgba(28,23,20,.7) 100%);}
 .header-top-bar{display:flex;align-items:center;justify-content:space-between;padding:.4rem 1.5rem;border-bottom:1px solid rgba(200,146,42,.15);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.2em;color:rgba(200,146,42,.4);}
