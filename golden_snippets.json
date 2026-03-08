@@ -1,0 +1,98 @@
+[
+  {
+    "id": "snip_lipo_charging",
+    "tags": ["lipo", "battery", "charging", "tp4056", "bq24"],
+    "title": "LiPo Battery Charging (TP4056)",
+    "snippet": "Use TP4056 for single-cell LiPo charging. Connect VBUS (USB 5V) to IN+. Connect BAT+ to battery positive. Add 1.2kΩ resistor on PROG pin to set 1A charge current. Add DW01A protection IC on battery output for over-discharge, over-charge, and short-circuit protection. Decoupling: 10µF cap on IN, 10µF cap on BAT. Never connect LiPo directly to MCU VCC without protection.",
+    "components": ["TP4056", "DW01A", "FS8205A", "10uF capacitor", "1.2k resistor"],
+    "warnings": ["Always include battery protection IC", "LiPo max charge voltage is 4.2V", "Do not exceed 1C charge rate"]
+  },
+  {
+    "id": "snip_esp32_power",
+    "tags": ["esp32", "3.3v", "ldo", "power", "ams1117", "decoupling"],
+    "title": "ESP32 Power Supply",
+    "snippet": "ESP32 runs at 3.3V. Use AMS1117-3.3 LDO from 5V USB or AMS1117-3.3 from regulated 5V. Place 10µF + 100nF decoupling caps on VCC pin. ESP32 peak current draw is 500mA during WiFi TX — ensure LDO can supply at least 600mA. Add 0Ω jumper or ferrite bead between LDO output and ESP32 VCC for noise isolation.",
+    "components": ["ESP32", "AMS1117-3.3", "10uF capacitor", "100nF capacitor"],
+    "warnings": ["ESP32 is NOT 5V tolerant on GPIO", "Peak WiFi current can cause LDO dropout", "Always decouple near VCC pin"]
+  },
+  {
+    "id": "snip_motor_driver_l298n",
+    "tags": ["motor", "l298n", "h-bridge", "motor driver", "dc motor", "pwm"],
+    "title": "L298N Dual H-Bridge Motor Driver",
+    "snippet": "L298N drives two DC motors up to 2A each. Connect ENA/ENB to MCU PWM pins for speed control. IN1/IN2 control Motor A direction, IN3/IN4 control Motor B. Logic VCC = 5V. Motor VCC = 6-35V (separate supply recommended). Add 100nF ceramic caps across each motor terminal to suppress EMI. L298N has internal voltage drop of ~2V — account for this in motor supply voltage.",
+    "components": ["L298N", "100nF capacitor", "flyback diode"],
+    "warnings": ["Add flyback diodes on motor terminals", "L298N gets hot at high currents — add heatsink", "Separate motor power supply from logic supply"]
+  },
+  {
+    "id": "snip_usb_c_pd",
+    "tags": ["usb-c", "usb c", "pd", "power delivery", "cc pin", "5v"],
+    "title": "USB-C Power Input (5V)",
+    "snippet": "For USB-C 5V input without PD negotiation, add 5.1kΩ pull-down resistors on both CC1 and CC2 pins. This signals to the charger that the device wants 5V/3A. Without CC resistors, many USB-C chargers will not provide power. Add TVS diode (PRTR5V0U2X) on VBUS for ESD protection. Decoupling: 100µF bulk cap on VBUS.",
+    "components": ["5.1k resistor x2", "PRTR5V0U2X", "100uF capacitor"],
+    "warnings": ["Missing CC resistors = no power from USB-C PD chargers", "Always add ESD protection on VBUS", "CC pins must never exceed 5.5V"]
+  },
+  {
+    "id": "snip_i2c_pullup",
+    "tags": ["i2c", "sda", "scl", "pull-up", "oled", "sensor", "display"],
+    "title": "I2C Bus Pull-up Resistors",
+    "snippet": "I2C SDA and SCL lines require pull-up resistors to VCC. Use 4.7kΩ for standard mode (100kHz) and 2.2kΩ for fast mode (400kHz). For 3.3V systems use 3.3V pull-ups. For 5V systems use 5V pull-ups. Do NOT mix voltages — use a level shifter (TXS0102) if MCU is 3.3V and sensor is 5V. Maximum bus capacitance is 400pF.",
+    "components": ["4.7k resistor x2", "TXS0102 (if level shift needed)"],
+    "warnings": ["Missing pull-ups will cause I2C to malfunction", "Do not mix 3.3V and 5V on same I2C bus without level shifter", "Keep I2C traces short"]
+  },
+  {
+    "id": "snip_spi_wiring",
+    "tags": ["spi", "mosi", "miso", "sck", "cs", "sd card", "display", "flash"],
+    "title": "SPI Bus Wiring",
+    "snippet": "SPI uses MOSI, MISO, SCK, and one CS pin per device. CS is active-low — pull high with 10kΩ resistor when idle. Multiple devices share MOSI/MISO/SCK but each needs its own CS pin. For 3.3V MCU with 5V SPI device, add 33Ω series resistors on MOSI and SCK lines. MISO is input so no series resistor needed. Max SPI speed depends on trace length — keep traces under 10cm for speeds above 10MHz.",
+    "components": ["10k resistor (CS pull-up)", "33Ω series resistors"],
+    "warnings": ["Never share CS pins between SPI devices", "Add series resistors for 5V tolerance", "SPI is not hot-pluggable"]
+  },
+  {
+    "id": "snip_esd_protection",
+    "tags": ["esd", "protection", "tvs", "gpio", "input", "connector"],
+    "title": "ESD Protection on GPIO / Connectors",
+    "snippet": "Add TVS diode arrays (PRTR5V0U2X for 2-line, IP4234CZ6 for 4-line) on any GPIO that connects to an external connector or user-facing interface. Place ESD components as close as possible to the connector — before any other series components. Add 33Ω series resistors on all GPIO lines going off-board to limit current during ESD events.",
+    "components": ["PRTR5V0U2X", "IP4234CZ6", "33Ω resistor"],
+    "warnings": ["ESD damage is cumulative and may not show immediately", "Place TVS diodes before series resistors from connector perspective", "Off-board signals always need ESD protection"]
+  },
+  {
+    "id": "snip_decoupling",
+    "tags": ["decoupling", "bypass capacitor", "noise", "power", "vcc", "supply"],
+    "title": "Decoupling Capacitors",
+    "snippet": "Every IC needs decoupling capacitors on its VCC pin. Place 100nF ceramic (0402 or 0603) as close as possible to the VCC pin. Add one 10µF electrolytic per power domain for bulk decoupling. For high-speed ICs (>100MHz), also add 10nF in parallel. Rule of thumb: one 100nF cap per VCC pin, within 2mm of the pin.",
+    "components": ["100nF ceramic capacitor", "10uF electrolytic capacitor"],
+    "warnings": ["Missing decoupling causes noise-related random resets", "Distance from VCC pin matters — keep under 2mm", "Use X5R or X7R dielectric ceramics"]
+  },
+  {
+    "id": "snip_voltage_divider_logic",
+    "tags": ["logic level", "5v", "3.3v", "voltage divider", "level shift", "arduino", "esp32"],
+    "title": "Logic Level Shifting (5V → 3.3V)",
+    "snippet": "To connect a 5V output (e.g. Arduino) to a 3.3V input (e.g. ESP32), use a voltage divider: 10kΩ from signal to 3.3V input, 20kΩ from that node to GND. Output = 5V × (20k / (10k+20k)) = 3.33V. For bidirectional level shifting use TXS0108E (8-channel) or BSS138 FET-based shifter. Never connect 5V directly to a 3.3V GPIO — this can permanently damage the MCU.",
+    "components": ["10k resistor", "20k resistor", "TXS0108E (bidirectional)"],
+    "warnings": ["5V on 3.3V GPIO can permanently damage MCU", "Voltage divider is one-directional only", "For I2C use TXS0102 or PCA9306"]
+  },
+  {
+    "id": "snip_arduino_shield",
+    "tags": ["arduino", "arduino uno", "shield", "5v", "digital pin", "analog pin"],
+    "title": "Arduino Uno GPIO Reference",
+    "snippet": "Arduino Uno has 14 digital pins (D0–D13) and 6 analog pins (A0–A5). D0/D1 are UART TX/RX — avoid using for GPIO if serial is needed. D3, D5, D6, D9, D10, D11 support PWM (~). D10, D11, D12, D13 are SPI (SS, MOSI, MISO, SCK). A4/A5 are I2C (SDA/SCL). Operating voltage is 5V. GPIO current limit: 40mA per pin, 200mA total. Always use 220Ω resistor with LEDs.",
+    "components": ["Arduino Uno R3", "220Ω resistor"],
+    "warnings": ["D0/D1 conflict with Serial — avoid for GPIO if debugging", "Total GPIO current must not exceed 200mA", "Analog pins can be used as digital GPIO"]
+  },
+  {
+    "id": "snip_ldo_buck",
+    "tags": ["ldo", "buck", "regulator", "power supply", "5v", "3.3v", "12v"],
+    "title": "Power Regulator Selection (LDO vs Buck)",
+    "snippet": "Use LDO (e.g. AMS1117) when input-output voltage difference < 3V and current < 800mA — simple, low noise. Use Buck converter (e.g. MP2307, XL4016) when input voltage is much higher than output OR current > 1A — more efficient, less heat. LDO dissipates (Vin-Vout) × Iout as heat. At 12V in, 3.3V out, 1A: LDO wastes 8.7W as heat. Buck converter would be 85%+ efficient.",
+    "components": ["AMS1117-3.3", "MP2307", "XL4016"],
+    "warnings": ["LDO at high voltage differential gets extremely hot", "Buck converters require output inductor and capacitor", "Add heatsink to LDO for currents above 500mA"]
+  },
+  {
+    "id": "snip_raspberry_pi_gpio",
+    "tags": ["raspberry pi", "rpi", "gpio", "3.3v", "40 pin", "i2c", "spi", "uart"],
+    "title": "Raspberry Pi GPIO Reference",
+    "snippet": "Raspberry Pi GPIO operates at 3.3V — NOT 5V tolerant. 40-pin header: Pin 1/17 = 3.3V, Pin 2/4 = 5V, Pin 6/9/14/20/25/30/34/39 = GND. I2C: GPIO2 (SDA), GPIO3 (SCL) with built-in 1.8kΩ pull-ups. SPI0: GPIO10 (MOSI), GPIO9 (MISO), GPIO11 (SCK), GPIO8 (CE0), GPIO7 (CE1). UART: GPIO14 (TX), GPIO15 (RX). Max 16mA per GPIO pin, 50mA total from 3.3V rail.",
+    "components": ["Raspberry Pi", "level shifter"],
+    "warnings": ["GPIO is 3.3V only — 5V will damage Pi permanently", "Max 50mA total from onboard 3.3V regulator", "Disable serial console to use UART GPIO freely"]
+  }
+]
