@@ -19,6 +19,63 @@ app = Flask(__name__, static_folder="static")
 CORS(app)
 
 # ==============================================================
+#  RAG PIPELINE — Golden Circuit Snippets Knowledge Base
+# ==============================================================
+_SNIPPETS_PATH = os.path.join(os.path.dirname(__file__), "golden_snippets.json")
+
+def _load_snippets():
+    try:
+        with open(_SNIPPETS_PATH, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+GOLDEN_SNIPPETS = _load_snippets()
+
+
+def retrieve_relevant_snippets(user_request, top_k=3):
+    """
+    Keyword-based retrieval over the Golden Circuit Snippets knowledge base.
+    Scores each snippet by how many of its tags appear in the user request,
+    then returns the top_k most relevant snippet texts.
+    """
+    query = user_request.lower()
+    scored = []
+    for snippet in GOLDEN_SNIPPETS:
+        score = 0
+        for tag in snippet.get("tags", []):
+            if tag.lower() in query:
+                score += 2                          # exact tag match
+        for word in query.split():
+            if word in snippet.get("title", "").lower():
+                score += 1                          # title word match
+            if word in snippet.get("snippet", "").lower():
+                score += 0.5                        # body word match
+        if score > 0:
+            scored.append((score, snippet))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [s for _, s in scored[:top_k]]
+
+
+def build_rag_context(snippets):
+    """
+    Formats retrieved snippets into a context block to prepend to the LLM prompt.
+    """
+    if not snippets:
+        return ""
+    lines = ["=== RELEVANT GOLDEN CIRCUIT SNIPPETS (use these as reference) ==="]
+    for s in snippets:
+        lines.append(f"\n[{s['title']}]")
+        lines.append(s["snippet"])
+        if s.get("warnings"):
+            lines.append("WARNINGS: " + " | ".join(s["warnings"]))
+        if s.get("components"):
+            lines.append("KEY COMPONENTS: " + ", ".join(s["components"]))
+    lines.append("\n=== END OF SNIPPETS — Now generate the circuit JSON below ===\n")
+    return "\n".join(lines)
+
+
+# ==============================================================
 #  GEMINI MODELS
 # ==============================================================
 netlist_model = genai.GenerativeModel(
@@ -176,8 +233,13 @@ def validate_request(user_request):
 
 
 def generate_circuit_json(user_request):
-    response = gemini_call_with_retry(netlist_model, user_request)
-    raw = response.text.strip().replace("```json", "").replace("```", "").strip()
+    # RAG: retrieve relevant Golden Circuit Snippets and inject as context
+    snippets    = retrieve_relevant_snippets(user_request, top_k=3)
+    rag_context = build_rag_context(snippets)
+    print(f"[RAG] Retrieved {len(snippets)} snippets: {[s['title'] for s in snippets]}")
+    prompt      = rag_context + user_request
+    response    = gemini_call_with_retry(netlist_model, prompt)
+    raw         = response.text.strip().replace("```json", "").replace("```", "").strip()
     return json.loads(raw)
 
 
