@@ -236,6 +236,7 @@ def generate_circuit_json(user_request):
     # RAG: retrieve relevant Golden Circuit Snippets and inject as context
     snippets    = retrieve_relevant_snippets(user_request, top_k=3)
     rag_context = build_rag_context(snippets)
+    print(f"[RAG] Retrieved {len(snippets)} snippets: {[s['title'] for s in snippets]}")
     prompt      = rag_context + user_request
     response    = gemini_call_with_retry(netlist_model, prompt)
     raw         = response.text.strip().replace("```json", "").replace("```", "").strip()
