@@ -33,10 +33,7 @@ body{
 @keyframes steam-up{0%{opacity:0;transform:translateY(0) scale(1);}40%{opacity:.7;}100%{opacity:0;transform:translateY(-80px) scale(2);}}
 @keyframes header-in{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
 @keyframes badge-pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
-
-
-
-
+@keyframes impossible-in{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
 
 /* HEADER */
 header{position:relative;text-align:center;border-bottom:3px solid var(--brass-dark);overflow:hidden;background:linear-gradient(180deg,rgba(30,18,5,.9) 0%,rgba(28,23,20,.7) 100%);}
@@ -90,6 +87,71 @@ textarea:focus{border-color:var(--brass);box-shadow:0 0 18px rgba(200,146,42,.18
 .btn-engage:hover{background-position:right center;transform:translateY(-2px);}
 .btn-engage:active{transform:translateY(1px);}
 .btn-engage:disabled{opacity:.45;cursor:not-allowed;animation:none;transform:none;}
+
+/* IMPOSSIBLE REQUEST PANEL */
+.impossible-panel{
+  display:none;
+  background:linear-gradient(145deg,#1a0808,#2a1010,#1a0808);
+  border:2px solid #9e3a3a;
+  border-radius:4px;
+  padding:1.4rem 1.6rem;
+  margin-bottom:1.5rem;
+  position:relative;
+  box-shadow:0 0 30px rgba(158,58,58,.25),inset 0 0 30px rgba(0,0,0,.5);
+  animation:impossible-in .35s ease;
+}
+.impossible-panel::before,.impossible-panel::after{
+  content:'';position:absolute;width:8px;height:8px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#e07070,#9e3a3a);
+  box-shadow:0 0 4px rgba(224,112,112,.3);z-index:1;
+}
+.impossible-panel::before{top:8px;left:10px;}
+.impossible-panel::after{bottom:8px;right:10px;}
+.impossible-title{
+  font-family:'Cinzel',serif;font-size:.78rem;letter-spacing:.25em;
+  color:#e07070;text-transform:uppercase;margin-bottom:.7rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.impossible-title-icon{font-size:1.1rem;}
+.impossible-reason{
+  font-family:'IM Fell English',serif;font-style:italic;
+  color:var(--parchment);font-size:1rem;line-height:1.65;
+  margin-bottom:1.1rem;padding-bottom:.9rem;
+  border-bottom:1px solid rgba(158,58,58,.35);
+}
+.impossible-suggestions-title{
+  font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.18em;
+  color:#e0c060;text-transform:uppercase;margin-bottom:.6rem;
+}
+.impossible-suggestions{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.45rem;}
+.impossible-suggestions li{display:flex;align-items:flex-start;gap:.6rem;}
+.impossible-suggestions li::before{content:'⚙';color:var(--brass);flex-shrink:0;margin-top:.1rem;}
+.suggestion-chip{
+  cursor:pointer;
+  background:rgba(139,96,16,.15);
+  border:1px solid rgba(200,146,42,.28);
+  border-radius:2px;
+  padding:.28rem .65rem;
+  font-size:.82rem;
+  color:var(--parchment-dark);
+  font-family:'IM Fell English',serif;
+  font-style:italic;
+  transition:all .2s;
+  line-height:1.5;
+}
+.suggestion-chip:hover{
+  background:rgba(200,146,42,.22);
+  border-color:var(--brass);
+  color:var(--parchment);
+}
+.impossible-dismiss{
+  position:absolute;top:.75rem;right:1rem;
+  background:transparent;border:none;
+  color:rgba(224,112,112,.4);cursor:pointer;
+  font-size:1.1rem;line-height:1;
+  transition:color .2s;font-family:'Cinzel',serif;
+}
+.impossible-dismiss:hover{color:#e07070;}
 
 /* TWO COL */
 .two-col{display:grid;grid-template-columns:1fr 1.2fr;gap:1.5rem;}
@@ -149,6 +211,21 @@ textarea:focus{border-color:var(--brass);box-shadow:0 0 18px rgba(200,146,42,.18
 .diagram-inner .mermaid{filter:sepia(.35) hue-rotate(12deg) brightness(1.1);}
 .placeholder-msg{text-align:center;color:rgba(212,184,150,.28);font-family:'IM Fell English',serif;font-style:italic;font-size:.95rem;padding:3rem 1rem;}
 
+/* PIN MAP */
+.pin-map-section{margin-bottom:1.4rem;}
+.pin-map-mcu-title{font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.18em;color:var(--brass-light);text-transform:uppercase;margin-bottom:.6rem;padding-bottom:.4rem;border-bottom:1px solid rgba(200,146,42,.2);display:flex;align-items:center;gap:.5rem;}
+.pin-map-mcu-title::before{content:'⚙';font-size:.9rem;}
+.pin-table{width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:.5rem;}
+.pin-table th{text-align:left;padding:.4rem .65rem;border-bottom:1px solid var(--brass-dark);font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.12em;color:var(--brass);text-transform:uppercase;white-space:nowrap;}
+.pin-table td{padding:.35rem .65rem;border-bottom:1px solid rgba(200,146,42,.06);color:var(--parchment-dark);font-family:'Special Elite',cursive;}
+.pin-table tr:nth-child(even) td{background:rgba(0,0,0,.15);}
+.pin-tag{display:inline-block;background:rgba(139,96,16,.25);border:1px solid rgba(200,146,42,.3);border-radius:2px;padding:.1rem .4rem;font-size:.68rem;font-family:'Cinzel',serif;color:var(--brass-light);white-space:nowrap;}
+.pin-tag.power{background:rgba(74,158,74,.15);border-color:#3a8e3a;color:#7ec87e;}
+.pin-tag.conflict{background:rgba(158,58,58,.2);border-color:#9e3a3a;color:#e07070;}
+.conflict-banner{background:rgba(158,58,58,.12);border:1px solid rgba(158,58,58,.35);border-radius:3px;padding:.7rem 1rem;margin-top:.8rem;font-family:'IM Fell English',serif;font-style:italic;color:#e07070;font-size:.85rem;}
+.conflict-banner strong{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;display:block;margin-bottom:.3rem;color:#e07070;}
+.no-conflict{background:rgba(58,142,58,.1);border:1px solid rgba(58,142,58,.3);border-radius:3px;padding:.5rem .9rem;margin-top:.6rem;font-family:'IM Fell English',serif;font-style:italic;color:#6ec86e;font-size:.82rem;}
+
 /* DOWNLOAD */
 .download-ready{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.2rem;}
 .download-title{font-family:'Cinzel',serif;font-size:1rem;color:var(--brass-light);margin-bottom:.55rem;text-shadow:0 0 12px rgba(200,146,42,.4);}
@@ -165,7 +242,6 @@ footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13
 </style>
 </head>
 <body>
-
 
 <header>
   <div class="header-top-bar">
@@ -201,10 +277,10 @@ footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13
     </div>
   </div>
   <div class="header-stats">
-    <div class="stat-item"><div class="stat-val">GEMINI 3.1</div><div class="stat-lbl">Neural Engine</div></div>
+    <div class="stat-item"><div class="stat-val">GEMINI</div><div class="stat-lbl">Neural Engine</div></div>
     <div class="stat-item"><div class="stat-val">4-PASS</div><div class="stat-lbl">Auto-Fix Loop</div></div>
     <div class="stat-item"><div class="stat-val">ZIP</div><div class="stat-lbl">Output Package</div></div>
-    <div class="stat-item"><div class="stat-val">LIVE</div><div class="stat-lbl">DigiKey BOM</div></div>
+    <div class="stat-item"><div class="stat-val">KICAD</div><div class="stat-lbl">Netlist Export</div></div>
     <div class="stat-item"><div class="stat-val">MERMAID</div><div class="stat-lbl">Schematic</div></div>
   </div>
 </header>
@@ -230,6 +306,18 @@ footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13
         ⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙
       </button>
     </div>
+  </div>
+
+  <!-- IMPOSSIBLE REQUEST PANEL -->
+  <div class="impossible-panel" id="impossiblePanel">
+    <button class="impossible-dismiss" onclick="dismissImpossible()" title="Dismiss">✕</button>
+    <div class="impossible-title">
+      <span class="impossible-title-icon">⛔</span>
+      Request Deemed Impossible by the Aetheric Engine
+    </div>
+    <div class="impossible-reason" id="impossibleReason"></div>
+    <div class="impossible-suggestions-title">⚙ &nbsp; Suggested Alternatives — click to use</div>
+    <ul class="impossible-suggestions" id="impossibleSuggestions"></ul>
   </div>
 
   <!-- GAUGES + LOG -->
@@ -293,6 +381,7 @@ footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13
       <button class="tab-btn active" onclick="switchTab('diagram')"><span class="tab-icon">🗺</span> Schematic</button>
       <button class="tab-btn" onclick="switchTab('safety')"><span class="tab-icon">⚠</span> Safety Audit <span class="fail-badge" id="failBadge"></span></button>
       <button class="tab-btn" onclick="switchTab('bom')"><span class="tab-icon">📋</span> Bill of Materials</button>
+      <button class="tab-btn" onclick="switchTab('pins')"><span class="tab-icon">🔌</span> Pin Map</button>
       <button class="tab-btn" onclick="switchTab('download')"><span class="tab-icon">⬇</span> Download</button>
     </div>
 
@@ -314,6 +403,12 @@ footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13
       </div>
     </div>
 
+    <div class="tab-content" id="tab-pins">
+      <div id="pinMapOutput">
+        <div class="placeholder-msg">Run the pipeline to see pin assignments...</div>
+      </div>
+    </div>
+
     <div class="tab-content" id="tab-download">
       <div id="downloadReady" style="display:none">
         <div class="download-ready">
@@ -324,6 +419,8 @@ footer{text-align:center;padding:1.4rem;border-top:1px solid rgba(200,146,42,.13
               <span class="file-tag">safety_report.txt</span>
               <span class="file-tag">diagram.md</span>
               <span class="file-tag">BOM.csv</span>
+              <span class="file-tag">design.net</span>
+              <span class="file-tag">design.kicad_sch</span>
             </div>
           </div>
           <a class="btn-download" id="downloadBtn" href="#">⬇ RETRIEVE DESIGN PACKAGE</a>
@@ -345,8 +442,7 @@ mermaid.initialize({startOnLoad:false,theme:'dark',themeVariables:{
   titleColor:'#e8b84b',edgeLabelBackground:'#1a1008',fontSize:'14px'
 }});
 
-
-
+/* ── Helpers ── */
 function setPrompt(el){document.getElementById('circuitInput').value=el.textContent;}
 
 function log(msg,type='info'){
@@ -369,9 +465,46 @@ function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  ['diagram','safety','bom','download'].forEach((n,i)=>{
+  ['diagram','safety','bom','pins','download'].forEach((n,i)=>{
     if(n===name)document.querySelectorAll('.tab-btn')[i].classList.add('active');
   });
+}
+
+function renderPinMap(data){
+  const pins = data.pin_assignments || [];
+  const conflicts = data.conflicts || [];
+  const el = document.getElementById('pinMapOutput');
+  if(!pins.length){
+    el.innerHTML='<div class="placeholder-msg">No pin assignments found — MCU may not have been detected.</div>';
+    return;
+  }
+  let html = '';
+  pins.forEach(mcu=>{
+    html += `<div class="pin-map-section">`;
+    html += `<div class="pin-map-mcu-title">${mcu.component_name||mcu.component_id} &nbsp;<span style="opacity:.5;font-size:.6rem">(${mcu.component_id})</span></div>`;
+    html += `<table class="pin-table"><thead><tr>
+      <th>Pin</th><th>Name</th><th>Signal</th><th>Connected To</th><th>Peripheral</th>
+    </tr></thead><tbody>`;
+    (mcu.pins||[]).forEach(p=>{
+      const isPower = ['Power','GND','VCC','3V3','5V'].some(k=>p.peripheral&&p.peripheral.includes(k));
+      const tagClass = isPower ? 'power' : '';
+      html += `<tr>
+        <td><span class="pin-tag ${tagClass}">${p.pin_number||''}</span></td>
+        <td>${p.pin_name||''}</td>
+        <td><strong style="color:var(--brass-light)">${p.signal||''}</strong></td>
+        <td>${p.connected_to||''}</td>
+        <td><span style="font-size:.7rem;color:rgba(212,184,150,.55)">${p.peripheral||''}</span></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+  if(conflicts.length){
+    html += `<div class="conflict-banner"><strong>⚠ PERIPHERAL CONFLICTS DETECTED</strong>${conflicts.map(c=>`• ${c}`).join('<br>')}</div>`;
+    log(`⚠ ${conflicts.length} pin conflict(s) detected!`,'warn');
+  } else {
+    html += `<div class="no-conflict">✓ No peripheral conflicts detected — pin assignments are clean.</div>`;
+  }
+  el.innerHTML = html;
 }
 
 async function renderDiagram(code){
@@ -451,6 +584,7 @@ async function displayFromZip(blob){
     document.getElementById('compCount').textContent=n;
     setGauge('gArcComp','gNeedleComp',n,20);
     await renderDiagram(buildMermaid(data));
+    renderPinMap(data);
     log(`Circuit parsed — ${n} components found.`,'info');
   }
   const rf=zip.file('safety_report.txt');
@@ -459,45 +593,110 @@ async function displayFromZip(blob){
   if(bf){renderBomTable(await bf.async('text'));log('BOM table rendered.','pass');}
 }
 
+/* ── Impossible panel ── */
+function showImpossible(reason, suggestions){
+  document.getElementById('impossibleReason').textContent = reason;
+  const ul = document.getElementById('impossibleSuggestions');
+  ul.innerHTML = '';
+  (suggestions||[]).forEach(s=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="suggestion-chip" onclick="useSuggestion(this)">${s}</span>`;
+    ul.appendChild(li);
+  });
+  const panel = document.getElementById('impossiblePanel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function dismissImpossible(){
+  document.getElementById('impossiblePanel').style.display = 'none';
+}
+
+function useSuggestion(el){
+  document.getElementById('circuitInput').value = el.textContent;
+  dismissImpossible();
+  document.getElementById('circuitInput').focus();
+}
+
+/* ── Main pipeline ── */
 async function runPipeline(){
   const input=document.getElementById('circuitInput').value.trim();
   if(!input){alert('Please describe your circuit first.');return;}
+
   const btn=document.getElementById('runBtn');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> MECHANISMS ENGAGED...';
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> MECHANISMS ENGAGED...';
+
+  dismissImpossible();
   clearLog();
+
   document.getElementById('safetyGrid').innerHTML='<div class="placeholder-msg">Running safety audit...</div>';
   document.getElementById('bomOutput').innerHTML='<div class="placeholder-msg">Generating BOM...</div>';
   document.getElementById('diagramOutput').innerHTML='<div class="placeholder-msg">⚙ Generating schematic... ⚙</div>';
+  document.getElementById('pinMapOutput').innerHTML='<div class="placeholder-msg">Resolving pin assignments...</div>';
   document.getElementById('downloadReady').style.display='none';
   document.getElementById('downloadPlaceholder').style.display='block';
   document.getElementById('failBadge').style.display='none';
   document.getElementById('passCount').textContent='—';
   document.getElementById('failCount').textContent='—';
   document.getElementById('compCount').textContent='—';
+
   log(`Igniting the aetheric boiler...`,'step');
   log(`Circuit: "${input.substring(0,55)}${input.length>55?'...':''}"`, 'info');
-  log('Transmitting to Gemini...','step');
+  log('Validating request feasibility...','step');
+
   try{
-    const resp=await fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request:input})});
-    if(!resp.ok){const e=await resp.json();throw new Error(e.error||'Pipeline failed');}
-    log('Netlist generated.','pass');
+    const resp = await fetch('/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({request:input})
+    });
+
+    // 422 = impossible request
+    if(resp.status === 422){
+      const e = await resp.json();
+      log('⛔ Request rejected — impossible circuit.','fail');
+      log(e.message,'warn');
+      showImpossible(e.message, e.suggestions||[]);
+      return;
+    }
+
+    if(!resp.ok){
+      const e = await resp.json();
+      throw new Error(e.error||'Pipeline failed');
+    }
+
+    log('Validation passed — transmitting to Gemini...','pass');
+    log('Generating netlist...','step');
     log('Safety audit running...','step');
     log('Auto-fix loop engaged...','fix');
     log('Enriching BOM...','info');
+    log('Forging KiCad netlist...','info');
     log('Packaging ZIP...','step');
-    const blob=await resp.blob();
-    const url=URL.createObjectURL(blob);
+
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
     await displayFromZip(blob);
-    log('output.json ✓','pass');log('safety_report.txt ✓','pass');log('BOM.csv ✓','pass');log('diagram.md ✓','pass');
+
+    log('output.json ✓','pass');
+    log('safety_report.txt ✓','pass');
+    log('BOM.csv ✓','pass');
+    log('diagram.md ✓','pass');
+    log('design.net ✓','pass');
+    log('design.kicad_sch ✓','pass');
     log('⚙ ALL MECHANISMS NOMINAL — Package ready!','pass');
+
     document.getElementById('downloadBtn').href=url;
     document.getElementById('downloadBtn').download='kevin_wizard_output.zip';
     document.getElementById('downloadReady').style.display='block';
     document.getElementById('downloadPlaceholder').style.display='none';
+
   }catch(err){
-    log(`ERROR: ${err.message}`,'fail');log('Check your API key and try again.','warn');
+    log(`ERROR: ${err.message}`,'fail');
+    log('Check your API key and try again.','warn');
   }finally{
-    btn.disabled=false;btn.innerHTML='⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙';
+    btn.disabled=false;
+    btn.innerHTML='⚙&nbsp;&nbsp;ENGAGE THE MECHANISMS&nbsp;&nbsp;⚙';
   }
 }
 </script>
